@@ -1,9 +1,8 @@
 """
-CareerLens AI — Fixed & Enhanced Edition
-ROOT FIX: CATEGORY_MAP now uses the EXACT names from the Kaggle dataset
-(ACCOUNTANT, INFORMATION-TECHNOLOGY, ENGINEERING, etc.)
-All 24 dataset categories are mapped to skill knowledge base.
-Dark Glassmorphism UI — Syne + Space Grotesk + JetBrains Mono
+CareerLens AI — Final Clean Edition
+- All algorithm names removed from UI
+- Increased font sizes throughout
+- Removed timing/technical messages
 """
 
 import streamlit as st
@@ -14,9 +13,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 st.set_page_config(page_title="CareerLens AI", page_icon="🔭", layout="wide", initial_sidebar_state="expanded")
 
-# ══════════════════════════════════════════════════════════
-#  FULL CSS — Dark Glassmorphism
-# ══════════════════════════════════════════════════════════
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -52,10 +48,10 @@ html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!impor
   line-height:1.05;letter-spacing:-.03em;color:#f8fafc;margin-bottom:.8rem;position:relative;z-index:1;}
 .hero-title span{background:linear-gradient(90deg,#818cf8,#a78bfa,#34d399);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.hero-sub{font-size:1rem;font-weight:300;color:rgba(148,163,184,.82);max-width:540px;line-height:1.75;margin-bottom:2rem;}
+.hero-sub{font-size:1.05rem;font-weight:300;color:rgba(148,163,184,.82);max-width:540px;line-height:1.75;margin-bottom:2rem;}
 .hero-pills{display:flex;flex-wrap:wrap;gap:.45rem;}
-.hero-pill{font-size:.7rem;font-weight:500;color:rgba(165,180,252,.88);
-  background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.18);padding:4px 11px;border-radius:99px;}
+.hero-pill{font-size:.78rem;font-weight:500;color:rgba(165,180,252,.88);
+  background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.18);padding:5px 13px;border-radius:99px;}
 .hero-stats{position:absolute;top:2.5rem;right:2.5rem;display:flex;gap:1.8rem;}
 .hs-num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#f8fafc;line-height:1;}
 .hs-lbl{font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(148,163,184,.45);margin-top:.2rem;}
@@ -66,13 +62,13 @@ html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!impor
 .sb-logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#f8fafc!important;}
 .sb-logo span{color:#818cf8;}
 .sb-ver{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(148,163,184,.3)!important;margin-top:.2rem;letter-spacing:.08em;}
-[data-testid="stSidebar"] label,[data-testid="stSidebar"] p,[data-testid="stSidebar"] .stMarkdown{color:rgba(226,232,240,.72)!important;}
+[data-testid="stSidebar"] label,[data-testid="stSidebar"] p,[data-testid="stSidebar"] .stMarkdown{color:rgba(226,232,240,.72)!important;font-size:1rem!important;}
 [data-testid="stSidebar"] hr{border-color:rgba(99,102,241,.12)!important;}
-.sb-sec{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(99,102,241,.6)!important;margin-bottom:.4rem;}
+.sb-sec{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(99,102,241,.6)!important;margin-bottom:.4rem;}
 
 /* ── SECTION LABELS ── */
-.sec-eye{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#818cf8;margin-bottom:.35rem;}
-.sec-head{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#f1f5f9;margin-bottom:1.1rem;letter-spacing:-.02em;}
+.sec-eye{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#818cf8;margin-bottom:.4rem;}
+.sec-head{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:700;color:#f1f5f9;margin-bottom:1.1rem;letter-spacing:-.02em;}
 
 /* ── METRIC TILES ── */
 .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
@@ -82,14 +78,14 @@ html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!impor
   background:linear-gradient(90deg,#6366f1,#8b5cf6,#34d399);transform:scaleX(0);transition:transform .3s;}
 .metric-tile:hover::after{transform:scaleX(1);}
 .metric-tile:hover{border-color:rgba(99,102,241,.35);box-shadow:0 8px 24px rgba(99,102,241,.12);transform:translateY(-2px);}
-.mt-icon{font-size:1.25rem;margin-bottom:.3rem;}
+.mt-icon{font-size:1.4rem;margin-bottom:.3rem;}
 .mt-num{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;
   background:linear-gradient(135deg,#818cf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
-.mt-lbl{font-size:.68rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:rgba(148,163,184,.48);margin-top:.35rem;}
+.mt-lbl{font-size:.8rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:rgba(148,163,184,.55);margin-top:.35rem;}
 
 /* ── MATCH CARDS ── */
 .mc{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.13);border-radius:15px;
-  padding:1.15rem 1.35rem;margin-bottom:.7rem;position:relative;overflow:hidden;transition:all .28s;}
+  padding:1.25rem 1.45rem;margin-bottom:.7rem;position:relative;overflow:hidden;transition:all .28s;}
 .mc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
   background:linear-gradient(180deg,#6366f1,#8b5cf6);transform:scaleY(0);transition:transform .28s;border-radius:3px 0 0 3px;}
 .mc:hover{border-color:rgba(99,102,241,.38);transform:translateX(4px);box-shadow:0 6px 20px rgba(99,102,241,.1);}
@@ -97,40 +93,40 @@ html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!impor
 .mc.top{border-color:rgba(129,140,248,.38);background:rgba(28,24,65,.55);}
 .mc.top::before{transform:scaleY(1);}
 .mc-rank{position:absolute;top:.95rem;right:1.1rem;font-family:'JetBrains Mono',monospace;
-  font-size:.62rem;font-weight:600;letter-spacing:.1em;color:#818cf8;
-  background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.18);padding:3px 9px;border-radius:99px;}
+  font-size:.72rem;font-weight:600;letter-spacing:.1em;color:#818cf8;
+  background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.18);padding:4px 10px;border-radius:99px;}
 .mc-rank.gld{color:#fbbf24;background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.22);}
-.mc-name{font-family:'Syne',sans-serif;font-size:1.03rem;font-weight:700;color:#f1f5f9;margin-bottom:.18rem;}
-.mc-score{font-size:.78rem;color:rgba(148,163,184,.55);margin-bottom:.55rem;}
-.bar-bg{height:5px;background:rgba(99,102,241,.1);border-radius:3px;overflow:hidden;}
-.bar-fg{height:5px;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa);}
+.mc-name{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:#f1f5f9;margin-bottom:.2rem;}
+.mc-score{font-size:.9rem;color:rgba(148,163,184,.6);margin-bottom:.55rem;}
+.bar-bg{height:6px;background:rgba(99,102,241,.1);border-radius:3px;overflow:hidden;}
+.bar-fg{height:6px;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa);}
 
 /* ── PRED BOX ── */
 .pred-box{background:rgba(28,24,65,.5);border:1px solid rgba(129,140,248,.28);border-radius:15px;
-  padding:1.4rem 1.5rem;position:relative;overflow:hidden;}
+  padding:1.6rem 1.6rem;position:relative;overflow:hidden;}
 .pred-box::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;
   border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);}
-.pred-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;
-  letter-spacing:.15em;text-transform:uppercase;color:#818cf8;margin-bottom:.45rem;}
-.pred-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#f8fafc;letter-spacing:-.02em;}
+.pred-lbl{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#818cf8;margin-bottom:.5rem;}
+.pred-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:#f8fafc;letter-spacing:-.02em;}
 
 /* ── PILLS ── */
-.ph{display:inline-block;background:rgba(16,185,129,.09);color:#34d399;border:1px solid rgba(16,185,129,.22);
-  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
-.ph:hover{background:rgba(16,185,129,.16);}
-.pm{display:inline-block;background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.18);
-  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
-.pl{display:inline-block;background:rgba(251,191,36,.07);color:#fbbf24;border:1px solid rgba(251,191,36,.18);
-  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
-.pn{display:inline-block;background:rgba(99,102,241,.08);color:rgba(165,180,252,.8);border:1px solid rgba(99,102,241,.15);
-  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;}
+.ph{display:inline-block;background:rgba(16,185,129,.12);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);
+  border-radius:99px;padding:6px 16px;font-size:.92rem;font-weight:600;margin:4px;transition:all .2s;}
+.ph:hover{background:rgba(16,185,129,.2);}
+.pm{display:inline-block;background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.28);
+  border-radius:99px;padding:6px 16px;font-size:.92rem;font-weight:600;margin:4px;transition:all .2s;}
+.pl{display:inline-block;background:rgba(251,191,36,.1);color:#fde68a;border:1px solid rgba(251,191,36,.26);
+  border-radius:99px;padding:6px 16px;font-size:.92rem;font-weight:600;margin:4px;transition:all .2s;}
+.pn{display:inline-block;background:rgba(99,102,241,.1);color:rgba(196,181,253,.9);border:1px solid rgba(99,102,241,.2);
+  border-radius:99px;padding:6px 16px;font-size:.92rem;font-weight:600;margin:4px;}
 
 /* ── TABS ── */
 .stTabs [data-baseweb="tab-list"]{background:rgba(13,18,38,.75)!important;border-radius:12px!important;
   padding:4px!important;border:1px solid rgba(99,102,241,.14)!important;gap:2px!important;}
 .stTabs [data-baseweb="tab"]{background:transparent!important;border-radius:9px!important;
   color:rgba(148,163,184,.62)!important;font-family:'Space Grotesk',sans-serif!important;
-  font-weight:500!important;font-size:.86rem!important;padding:.48rem 1.15rem!important;border:none!important;transition:all .2s!important;}
+  font-weight:600!important;font-size:1rem!important;padding:.55rem 1.3rem!important;border:none!important;transition:all .2s!important;}
 .stTabs [data-baseweb="tab"]:hover{color:#f1f5f9!important;}
 .stTabs [aria-selected="true"]{background:rgba(99,102,241,.22)!important;color:#a5b4fc!important;
   box-shadow:0 0 12px rgba(99,102,241,.12)!important;}
@@ -139,118 +135,127 @@ html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!impor
 /* ── BUTTON ── */
 .stButton>button{background:linear-gradient(135deg,#4f46e5,#7c3aed)!important;color:#fff!important;
   border:none!important;border-radius:12px!important;font-family:'Syne',sans-serif!important;
-  font-weight:700!important;font-size:.95rem!important;letter-spacing:.02em!important;
-  padding:.68rem 2.2rem!important;box-shadow:0 4px 20px rgba(79,70,229,.42)!important;transition:all .28s!important;}
+  font-weight:700!important;font-size:1.05rem!important;letter-spacing:.02em!important;
+  padding:.75rem 2.5rem!important;box-shadow:0 4px 20px rgba(79,70,229,.42)!important;transition:all .28s!important;}
 .stButton>button:hover{transform:translateY(-2px)!important;box-shadow:0 8px 28px rgba(79,70,229,.55)!important;}
 
 /* ── UPLOAD ── */
 [data-testid="stFileUploadDropzone"]{background:rgba(13,18,38,.8)!important;
   border:2px dashed rgba(99,102,241,.28)!important;border-radius:15px!important;transition:border-color .3s!important;}
 [data-testid="stFileUploadDropzone"]:hover{border-color:rgba(99,102,241,.55)!important;}
-[data-testid="stFileUploadDropzone"] *{color:rgba(148,163,184,.72)!important;}
+[data-testid="stFileUploadDropzone"] *{color:rgba(148,163,184,.72)!important;font-size:.95rem!important;}
 
 /* ── INPUTS ── */
 .stTextArea textarea,.stTextInput input{background:rgba(13,18,38,.82)!important;
   border:1px solid rgba(99,102,241,.18)!important;border-radius:11px!important;color:#e2e8f0!important;
-  font-family:'Space Grotesk',sans-serif!important;}
+  font-family:'Space Grotesk',sans-serif!important;font-size:1rem!important;}
 .stTextArea textarea:focus,.stTextInput input:focus{border-color:rgba(99,102,241,.48)!important;
   box-shadow:0 0 0 3px rgba(99,102,241,.08)!important;}
 .stSelectbox>div>div{background:rgba(13,18,38,.82)!important;border:1px solid rgba(99,102,241,.18)!important;
-  border-radius:10px!important;color:#e2e8f0!important;}
+  border-radius:10px!important;color:#e2e8f0!important;font-size:1rem!important;}
 
 /* ── EXPANDER ── */
 .streamlit-expanderHeader{background:rgba(13,18,38,.72)!important;border:1px solid rgba(99,102,241,.13)!important;
-  border-radius:10px!important;color:rgba(165,180,252,.88)!important;font-family:'Space Grotesk',sans-serif!important;font-weight:500!important;}
+  border-radius:10px!important;color:rgba(165,180,252,.88)!important;font-family:'Space Grotesk',sans-serif!important;font-weight:600!important;font-size:1rem!important;}
 .streamlit-expanderContent{background:rgba(6,8,18,.65)!important;border:1px solid rgba(99,102,241,.09)!important;
   border-top:none!important;border-radius:0 0 10px 10px!important;}
 
 /* ── ALERTS ── */
-.stAlert{background:rgba(13,18,38,.82)!important;border-radius:12px!important;border:1px solid rgba(99,102,241,.18)!important;color:#e2e8f0!important;}
+.stAlert{background:rgba(13,18,38,.82)!important;border-radius:12px!important;border:1px solid rgba(99,102,241,.18)!important;color:#e2e8f0!important;font-size:1rem!important;}
 
 /* ── DATAFRAME ── */
 [data-testid="stDataFrame"]{border:1px solid rgba(99,102,241,.13)!important;border-radius:12px!important;overflow:hidden;}
 [data-testid="stDataFrame"] th{background:rgba(28,24,65,.75)!important;color:#a5b4fc!important;
-  font-family:'JetBrains Mono',monospace!important;font-size:.7rem!important;letter-spacing:.06em!important;}
-[data-testid="stDataFrame"] td{color:#cbd5e1!important;}
+  font-family:'JetBrains Mono',monospace!important;font-size:.82rem!important;letter-spacing:.06em!important;}
+[data-testid="stDataFrame"] td{color:#cbd5e1!important;font-size:.95rem!important;}
 
 /* ── SPINNER ── */
 .stSpinner>div{border-top-color:#6366f1!important;}
 
 /* ── GAP OVERVIEW ── */
-.gap-box{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.16);border-radius:15px;padding:1.3rem 1.5rem;margin-bottom:1.8rem;}
-.gap-row{display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:.3rem;color:#e2e8f0;}
-.gap-pct{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:#818cf8;}
-.gap-track{height:11px;background:rgba(99,102,241,.09);border-radius:6px;overflow:hidden;margin:.4rem 0;}
-.gap-fill{height:11px;border-radius:6px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
+.gap-box{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.16);border-radius:15px;padding:1.5rem 1.7rem;margin-bottom:1.8rem;}
+.gap-row{display:flex;justify-content:space-between;font-size:.95rem;font-weight:600;margin-bottom:.3rem;color:#e2e8f0;}
+.gap-pct{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:#818cf8;}
+.gap-track{height:12px;background:rgba(99,102,241,.09);border-radius:6px;overflow:hidden;margin:.4rem 0;}
+.gap-fill{height:12px;border-radius:6px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
 
 /* ── SKILL COLUMN HEADER ── */
-.skill-col-head{font-weight:700;font-size:.88rem;color:#f1f5f9;margin-bottom:.6rem;padding:.5rem .7rem;
+.skill-col-head{font-weight:700;font-size:1.05rem;color:#f1f5f9;margin-bottom:.7rem;padding:.6rem .8rem;
   background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.12);border-radius:9px;}
-.skill-section-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;
+.skill-section-lbl{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase;margin:.55rem 0 .3rem;}
 
 /* ── STEP ROWS ── */
-.step-row{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:1.1rem;}
-.step-n{flex-shrink:0;width:30px;height:30px;border-radius:50%;
+.step-row{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;}
+.step-n{flex-shrink:0;width:38px;height:38px;border-radius:50%;
   background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-size:.78rem;font-weight:800;color:white;box-shadow:0 0 14px rgba(99,102,241,.38);}
-.step-t{font-family:'Syne',sans-serif;font-size:.93rem;font-weight:700;color:#f1f5f9;margin-bottom:.1rem;}
-.step-s{font-size:.78rem;color:rgba(148,163,184,.52);}
+  font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;color:white;box-shadow:0 0 16px rgba(99,102,241,.45);}
+.step-t{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:#f8fafc;margin-bottom:.25rem;}
+.step-s{font-size:1rem;color:rgba(203,213,225,.78);}
 
 /* ── RESOURCE CARDS ── */
 .res-card{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.1);border-left:3px solid #6366f1;
-  border-radius:0 13px 13px 0;padding:.88rem 1.1rem;margin-bottom:.5rem;transition:all .22s;}
+  border-radius:0 13px 13px 0;padding:1.1rem 1.3rem;margin-bottom:.6rem;transition:all .22s;}
 .res-card:hover{border-left-color:#34d399;box-shadow:0 4px 14px rgba(52,211,153,.07);transform:translateX(3px);}
-.res-t{font-weight:600;font-size:.86rem;color:#f1f5f9;}
-.res-m{font-size:.72rem;color:rgba(148,163,184,.48);margin-top:3px;}
+.res-t{font-weight:700;font-size:1.05rem;color:#f1f5f9;}
+.res-m{font-size:.88rem;color:rgba(203,213,225,.65);margin-top:5px;}
 
 /* ── NEXT STEPS ── */
-.ns-item{display:flex;align-items:center;gap:.75rem;background:rgba(13,18,38,.72);
-  border:1px solid rgba(99,102,241,.09);border-radius:10px;padding:.68rem 1rem;
-  margin-bottom:.42rem;font-size:.83rem;color:#cbd5e1;transition:all .2s;}
-.ns-item:hover{border-color:rgba(99,102,241,.28);color:#f1f5f9;}
+.ns-item{display:flex;align-items:center;gap:.9rem;background:rgba(13,18,38,.72);
+  border:1px solid rgba(99,102,241,.09);border-radius:10px;padding:.9rem 1.2rem;
+  margin-bottom:.5rem;font-size:1rem;color:#e2e8f0;transition:all .2s;}
+.ns-item:hover{border-color:rgba(99,102,241,.3);color:#f8fafc;}
 
 /* ── JD BOX ── */
 .jd-box{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.18);
-  border-radius:17px;padding:1.5rem 1.6rem;margin-bottom:1.5rem;}
-.jd-track{height:9px;background:rgba(99,102,241,.09);border-radius:5px;overflow:hidden;margin:.5rem 0;}
-.jd-fill{height:9px;border-radius:5px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
+  border-radius:17px;padding:1.6rem 1.7rem;margin-bottom:1.5rem;}
+.jd-track{height:10px;background:rgba(99,102,241,.09);border-radius:5px;overflow:hidden;margin:.5rem 0;}
+.jd-fill{height:10px;border-radius:5px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
 
 /* ── LANDING ── */
-.land-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.9rem;max-width:660px;margin:0 auto;}
+.land-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.9rem;max-width:700px;margin:0 auto;}
 .land-f{background:rgba(13,18,38,.72);border:1px solid rgba(99,102,241,.11);border-radius:15px;
-  padding:1.25rem 1.35rem;transition:all .28s;}
+  padding:1.4rem 1.5rem;transition:all .28s;}
 .land-f:hover{border-color:rgba(99,102,241,.32);box-shadow:0 6px 20px rgba(99,102,241,.09);transform:translateY(-2px);}
-.lf-icon{font-size:1.5rem;margin-bottom:.4rem;}
-.lf-t{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;color:#f1f5f9;margin-bottom:.2rem;}
-.lf-d{font-size:.76rem;color:rgba(148,163,184,.52);line-height:1.55;}
+.lf-icon{font-size:1.6rem;margin-bottom:.5rem;}
+.lf-t{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:#f1f5f9;margin-bottom:.3rem;}
+.lf-d{font-size:.88rem;color:rgba(148,163,184,.58);line-height:1.6;}
 
 /* ── WC BADGE ── */
 .wc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.07);
-  border:1px solid rgba(16,185,129,.18);border-radius:99px;padding:4px 13px;
-  font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:500;color:#34d399;margin-top:.55rem;}
+  border:1px solid rgba(16,185,129,.18);border-radius:99px;padding:5px 15px;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:500;color:#34d399;margin-top:.55rem;}
 
 /* ── DOWNLOAD BTN ── */
 [data-testid="stDownloadButton"] button{background:rgba(13,18,38,.82)!important;
   border:1px solid rgba(99,102,241,.28)!important;color:#818cf8!important;border-radius:10px!important;
-  font-family:'Space Grotesk',sans-serif!important;font-weight:500!important;transition:all .2s!important;}
+  font-family:'Space Grotesk',sans-serif!important;font-weight:600!important;font-size:.95rem!important;transition:all .2s!important;}
 [data-testid="stDownloadButton"] button:hover{background:rgba(99,102,241,.14)!important;
   border-color:rgba(99,102,241,.48)!important;color:#a5b4fc!important;}
 
 hr{border:none!important;border-top:1px solid rgba(99,102,241,.1)!important;margin:1.8rem 0!important;}
 
-/* ── CATEGORY WARNING BOX ── */
+/* ── WARNING BOX ── */
 .no-data-box{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:12px;
-  padding:1rem 1.2rem;font-size:.84rem;color:rgba(251,191,36,.85);line-height:1.6;}
+  padding:1rem 1.3rem;font-size:.92rem;color:rgba(251,191,36,.85);line-height:1.7;}
+
+/* ── DETECTED SKILLS LABEL ── */
+.det-skills-lbl{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:#f1f5f9;margin-bottom:.6rem;margin-top:.8rem;}
+
+/* ── PREDICTION LABEL ── */
+.top-career-lbl{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#818cf8;margin-bottom:.5rem;}
+
+/* Increase general text sizes */
+p, li, .stMarkdown p{font-size:1rem!important;}
+label{font-size:1rem!important;}
 </style>
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
-#  KNOWLEDGE BASE — keyed by EXACT Kaggle category names
-#  (ALL CAPS with hyphens, matching df['Category'].unique())
+#  KNOWLEDGE BASE
 # ══════════════════════════════════════════════════════════
 CAREER_SKILLS = {
-    # ── TECH CAREERS ──────────────────────────────────────
     "INFORMATION-TECHNOLOGY": {
         "core":     ["python","machine learning","scikit-learn","tensorflow","pytorch","numpy","pandas","sql","linux","networking","git","docker"],
         "advanced": ["deep learning","kubernetes","microservices","cloud computing","mlops","transformers","nlp","computer vision","devops","spark"],
@@ -259,7 +264,7 @@ CAREER_SKILLS = {
             {"title":"CS50 – Introduction to Computer Science","type":"🎓 Course","link":"https://cs50.harvard.edu"},
             {"title":"AWS Certified Solutions Architect","type":"📜 Cert","link":"https://aws.amazon.com/certification/"},
             {"title":"Linux Foundation Training","type":"🏋️ Platform","link":"https://training.linuxfoundation.org"},
-            {"title":"The Pragmatic Programmer","type":"📘 Book","link":"https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/"},
+            {"title":"The Pragmatic Programmer","type":"📘 Book","link":"https://pragprog.com/titles/tpp20/"},
         ]
     },
     "ENGINEERING": {
@@ -301,7 +306,6 @@ CAREER_SKILLS = {
             {"title":"Coursera Business Analytics","type":"🎓 Course","link":"https://www.coursera.org/specializations/business-analytics"},
         ]
     },
-    # ── FINANCE & BUSINESS ────────────────────────────────
     "ACCOUNTANT": {
         "core":     ["accounting","financial statements","excel","quickbooks","tax","auditing","bookkeeping","balance sheet","payroll","gaap"],
         "advanced": ["financial modeling","erp","sap","oracle financials","sql","power bi","ifrs","forensic accounting","budgeting","variance analysis"],
@@ -331,7 +335,6 @@ CAREER_SKILLS = {
             {"title":"FMVA – Financial Modeling","type":"📜 Cert","link":"https://corporatefinanceinstitute.com/certifications/financial-modeling-valuation-analyst-fmva/"},
         ]
     },
-    # ── HR & BUSINESS ─────────────────────────────────────
     "HR": {
         "core":     ["recruitment","employee relations","payroll","performance management","onboarding","hris","labor law","compensation","training","talent acquisition"],
         "advanced": ["hr analytics","organizational development","succession planning","diversity & inclusion","workday","sap hr","leadership development","employer branding"],
@@ -361,7 +364,6 @@ CAREER_SKILLS = {
             {"title":"SPIN Selling","type":"📘 Book","link":"https://www.amazon.com/SPIN-Selling-Neil-Rackham/dp/0070511136"},
         ]
     },
-    # ── HEALTHCARE & WELLNESS ──────────────────────────────
     "HEALTHCARE": {
         "core":     ["patient care","medical terminology","emr","hipaa","clinical documentation","nursing","diagnosis","treatment planning","medication management","vital signs"],
         "advanced": ["telemedicine","healthcare analytics","hl7","fhir","medical coding","icd-10","population health","care coordination","clinical research"],
@@ -380,7 +382,6 @@ CAREER_SKILLS = {
             {"title":"ACE Fitness","type":"📜 Cert","link":"https://www.acefitness.org/fitness-certifications/"},
         ]
     },
-    # ── EDUCATION ─────────────────────────────────────────
     "TEACHER": {
         "core":     ["lesson planning","curriculum development","classroom management","assessment","differentiated instruction","communication","google classroom","microsoft teams","student engagement","special education"],
         "advanced": ["instructional design","edtech","data-driven instruction","project-based learning","sel","grant writing","stem","blended learning","lms administration"],
@@ -399,7 +400,6 @@ CAREER_SKILLS = {
             {"title":"Coursera Law Specializations","type":"🎓 Course","link":"https://www.coursera.org/browse/social-sciences/law"},
         ]
     },
-    # ── SKILLED TRADES & INDUSTRY ─────────────────────────
     "CHEF": {
         "core":     ["culinary arts","food safety","haccp","menu planning","kitchen management","food cost control","recipe development","team management","catering","inventory"],
         "advanced": ["molecular gastronomy","restaurant management","food styling","food photography","nutritional planning","global cuisines","franchise management","catering operations"],
@@ -483,39 +483,8 @@ CAREER_SKILLS = {
     },
 }
 
-# ══════════════════════════════════════════════════════════
-#  EXACT CATEGORY MAP — must match Kaggle df['Category'] values
-# ══════════════════════════════════════════════════════════
 CATEGORY_MAP = {cat: cat for cat in CAREER_SKILLS}
-# Also handle any display-name variants returned by the model
-CATEGORY_MAP.update({
-    "INFORMATION-TECHNOLOGY": "INFORMATION-TECHNOLOGY",
-    "ENGINEERING":             "ENGINEERING",
-    "DESIGNER":                "DESIGNER",
-    "DIGITAL-MEDIA":           "DIGITAL-MEDIA",
-    "CONSULTANT":              "CONSULTANT",
-    "ACCOUNTANT":              "ACCOUNTANT",
-    "FINANCE":                 "FINANCE",
-    "BANKING":                 "BANKING",
-    "HR":                      "HR",
-    "BUSINESS-DEVELOPMENT":    "BUSINESS-DEVELOPMENT",
-    "SALES":                   "SALES",
-    "HEALTHCARE":              "HEALTHCARE",
-    "FITNESS":                 "FITNESS",
-    "TEACHER":                 "TEACHER",
-    "ADVOCATE":                "ADVOCATE",
-    "CHEF":                    "CHEF",
-    "CONSTRUCTION":            "CONSTRUCTION",
-    "AUTOMOBILE":              "AUTOMOBILE",
-    "AVIATION":                "AVIATION",
-    "AGRICULTURE":             "AGRICULTURE",
-    "APPAREL":                 "APPAREL",
-    "ARTS":                    "ARTS",
-    "PUBLIC-RELATIONS":        "PUBLIC-RELATIONS",
-    "BPO":                     "BPO",
-})
 
-# Friendly display names for UI
 FRIENDLY_NAMES = {
     "INFORMATION-TECHNOLOGY": "Information Technology",
     "ENGINEERING":             "Engineering",
@@ -667,7 +636,7 @@ def jd_match(resume, jd):
     return round(len(matched)/len(jw)*100, 1), matched, jw-rw
 
 # ══════════════════════════════════════════════════════════
-#  DEMO RESUMES — crafted to match actual Kaggle categories
+#  DEMO RESUMES
 # ══════════════════════════════════════════════════════════
 DEMOS = {
     "🖥️ Information Technology (ML/AI)": """
@@ -729,8 +698,7 @@ Expert in Figma, user research, and design systems.
 SKILLS
 Core: figma, adobe xd, photoshop, illustrator, ui design, ux design, typography,
       color theory, responsive design, wireframing, prototyping, user research
-Advanced: motion design, after effects, design systems, accessibility, animation,
-          3d modeling, blender
+Advanced: motion design, after effects, design systems, accessibility, animation, 3d modeling, blender
 
 EXPERIENCE
 UI/UX Designer — DesignStudio (2021–2024)
@@ -770,7 +738,7 @@ MBBS — AIIMS Delhi (2019) | MD Internal Medicine — (2022)
 #  SIDEBAR
 # ══════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown("<div class='sb-logo'>🔭 Career<span>Lens</span></div><div class='sb-ver'>v3.0 · Fixed + Enhanced</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sb-logo'>🔭 Career<span>Lens</span></div><div class='sb-ver'>v3.0 · AI Career Intelligence</div>", unsafe_allow_html=True)
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<div class='sb-sec'>Input Mode</div>", unsafe_allow_html=True)
     mode = st.radio("", ["📄 Upload PDF/TXT", "✏️ Paste Resume", "🎮 Demo Profile"], label_visibility="collapsed")
@@ -780,18 +748,12 @@ with st.sidebar:
     enable_jd = st.checkbox("🔗 JD Matcher", value=False, help="Match resume keywords against a job description")
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='font-size:.73rem;color:rgba(148,163,184,.48);line-height:1.78'>
-      <div style='color:rgba(165,180,252,.62);font-weight:600;margin-bottom:.35rem;font-size:.76rem'>How it works</div>
+    <div style='font-size:.85rem;color:rgba(148,163,184,.52);line-height:1.85'>
+      <div style='color:rgba(165,180,252,.7);font-weight:700;margin-bottom:.45rem;font-size:.9rem'>How it works</div>
       ① Upload or paste your resume<br>
-      ② BERT encodes semantic meaning<br>
-      ③ TF-IDF + LR classifies keywords<br>
+      ② AI reads the semantic meaning<br>
+      ③ Career matches are ranked<br>
       ④ Skill gap + roadmap generated
-      <br><br>
-      <span style='color:rgba(99,102,241,.42);font-size:.62rem;font-family:"JetBrains Mono",monospace'>
-        Model: all-MiniLM-L6-v2<br>
-        Dataset: Kaggle — 24 categories<br>
-        2484 resumes · 5000 TF-IDF features
-      </span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -801,25 +763,22 @@ with st.sidebar:
 st.markdown("""
 <div class='hero-wrap'>
   <div class='hero-stats'>
-    <div><div class='hs-num'>24</div><div class='hs-lbl'>Categories</div></div>
-    <div><div class='hs-num'>BERT</div><div class='hs-lbl'>Semantic AI</div></div>
-    <div><div class='hs-num'>NLP</div><div class='hs-lbl'>Powered</div></div>
+    <div><div class='hs-num'>24</div><div class='hs-lbl'>Career Paths</div></div>
+    <div><div class='hs-num'>AI</div><div class='hs-lbl'>Powered</div></div>
+    <div><div class='hs-num'>100%</div><div class='hs-lbl'>Free</div></div>
   </div>
-  <div class='hero-eye'>AI-Powered Career Intelligence — v3.0 Fixed</div>
+  <div class='hero-eye'>Smart Career Intelligence</div>
   <div class='hero-title'>Decode Your<br><span>Career Path</span></div>
   <div class='hero-sub'>
-    Upload your resume. Get instant career matches, skill gap analysis,
-    and a personalized learning roadmap powered by BERT + TF-IDF NLP.<br>
-    <span style='font-size:.85rem;color:rgba(52,211,153,.7)'>
-    ✅ Now correctly maps all 24 Kaggle resume categories
-    </span>
+    Upload your resume and instantly discover which careers suit you best,
+    what skills you're missing, and exactly how to get there.
   </div>
   <div class='hero-pills'>
-    <span class='hero-pill'>🤖 BERT Embeddings</span>
-    <span class='hero-pill'>📊 TF-IDF + Logistic Regression</span>
-    <span class='hero-pill'>🎯 Skill Gap (All 24 categories)</span>
+    <span class='hero-pill'>🎯 Career Matching</span>
+    <span class='hero-pill'>📊 Skill Gap Analysis</span>
     <span class='hero-pill'>🗺️ Learning Roadmap</span>
-    <span class='hero-pill'>🔗 JD Matcher</span>
+    <span class='hero-pill'>🔗 Job Description Match</span>
+    <span class='hero-pill'>📥 Downloadable Report</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -845,7 +804,7 @@ if mode == "📄 Upload PDF/TXT":
             with st.expander("👁 Preview extracted text"):
                 st.code(resume_text[:2000] + ("…" if len(resume_text)>2000 else ""), language=None)
         else:
-            st.error("Could not extract text. Try Paste Text option.")
+            st.error("Could not extract text. Try the Paste Resume option.")
 
 elif mode == "✏️ Paste Resume":
     st.markdown("<div class='sec-eye'>Step 01</div><div class='sec-head'>Paste your resume</div>", unsafe_allow_html=True)
@@ -866,18 +825,15 @@ if enable_jd:
     jd_text = st.text_area("JD", placeholder="Paste the job description you're targeting…", height=180, label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
-cb, ch = st.columns([2,5])
+cb, _ = st.columns([2,5])
 with cb:
     analyze = st.button("🔭 Analyze My Resume", use_container_width=True)
-with ch:
-    st.markdown("""<div style='padding:.65rem 0;font-size:.76rem;color:rgba(148,163,184,.38);
-    font-family:"JetBrains Mono",monospace'>First run ~60-90s (downloads BERT ~90MB + Kaggle dataset). Instant after.</div>""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 #  RESULTS
 # ══════════════════════════════════════════════════════════
 if analyze and resume_text.strip():
-    with st.spinner("⚙️ Loading AI models (first run ~60-90s)…"):
+    with st.spinner("⚙️ Loading AI models…"):
         try:
             m = load_models()
         except Exception as e:
@@ -885,7 +841,7 @@ if analyze and resume_text.strip():
             st.code("pip install nltk sentence-transformers kagglehub scikit-learn pdfplumber pandas numpy torch transformers")
             st.stop()
 
-    with st.spinner("🔬 Analyzing resume…"):
+    with st.spinner("🔬 Analyzing your resume…"):
         tp     = tfidf_pred(m, resume_text)
         recs   = bert_recs(m, resume_text, n=top_n)
         skills = extract_skills(resume_text)
@@ -917,17 +873,17 @@ if analyze and resume_text.strip():
           <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem'>
             <div>
               <div class='sec-eye'>JD Match Analysis</div>
-              <div style='font-family:"Syne",sans-serif;font-size:1.1rem;font-weight:700;color:#f1f5f9'>Resume ↔ Job Description</div>
+              <div style='font-family:"Syne",sans-serif;font-size:1.3rem;font-weight:700;color:#f1f5f9'>Resume ↔ Job Description</div>
             </div>
-            <div style='font-family:"Syne",sans-serif;font-size:2.2rem;font-weight:800;
+            <div style='font-family:"Syne",sans-serif;font-size:2.4rem;font-weight:800;
               background:linear-gradient(135deg,#818cf8,#34d399);-webkit-background-clip:text;
               -webkit-text-fill-color:transparent;background-clip:text'>{js}%</div>
           </div>
           <div class='jd-track'><div class='jd-fill' style='width:{min(js,100)}%'></div></div>
-          <div style='font-size:.72rem;color:rgba(148,163,184,.4);font-family:"JetBrains Mono",monospace;margin-top:.35rem'>
+          <div style='font-size:.82rem;color:rgba(148,163,184,.45);font-family:"JetBrains Mono",monospace;margin-top:.4rem'>
             {len(jmatch)} keywords matched · {len(jmiss)} keywords missing
           </div>
-          {"<div style='margin-top:1rem'><div style='font-size:.68rem;font-weight:700;color:rgba(248,113,113,.7);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem'>Add these to your resume</div>" + miss_html + "</div>" if top_miss else ""}
+          {"<div style='margin-top:1rem'><div style='font-size:.78rem;font-weight:700;color:rgba(248,113,113,.75);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem'>Add these to your resume</div>" + miss_html + "</div>" if top_miss else ""}
         </div>
         """, unsafe_allow_html=True)
 
@@ -941,7 +897,7 @@ if analyze and resume_text.strip():
     with t1:
         cl, cr = st.columns([1.2,1])
         with cl:
-            st.markdown("<div class='sec-eye'>BERT Semantic Similarity</div><div class='sec-head'>Your career matches</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sec-eye'>Ranked by AI Similarity</div><div class='sec-head'>Your career matches</div>", unsafe_allow_html=True)
             for i, r in enumerate(recs):
                 top_cls = "top" if i==0 else ""
                 rk_cls  = "gld" if i==0 else ""
@@ -950,37 +906,36 @@ if analyze and resume_text.strip():
                 <div class='mc {top_cls}'>
                   <div class='mc-rank {rk_cls}'>{rk_lbl}</div>
                   <div class='mc-name'>{friendly(r["career"])}</div>
-                  <div class='mc-score'>{r["score"]}% semantic similarity · <span style='color:rgba(99,102,241,.7);font-family:"JetBrains Mono",monospace;font-size:.7rem'>{r["career"]}</span></div>
+                  <div class='mc-score'>{r["score"]}% compatibility</div>
                   <div class='bar-bg'><div class='bar-fg' style='width:{min(r["score"],100)}%'></div></div>
                 </div>""", unsafe_allow_html=True)
         with cr:
-            st.markdown("<div class='sec-eye'>TF-IDF Classifier</div><div class='sec-head'>ML prediction</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sec-eye'>Keyword Analysis</div><div class='sec-head'>Top prediction</div>", unsafe_allow_html=True)
             st.markdown(f"""
             <div class='pred-box'>
-              <div class='pred-lbl'>Logistic Regression · TF-IDF</div>
+              <div class='pred-lbl'>Best Career Fit</div>
               <div class='pred-val'>{friendly(tp)}</div>
-              <div style='font-family:"JetBrains Mono",monospace;font-size:.65rem;color:rgba(99,102,241,.6);margin-top:.2rem'>{tp}</div>
-              <div style='font-size:.74rem;color:rgba(148,163,184,.42);margin-top:.3rem'>Keyword-based classification</div>
+              <div style='font-size:.82rem;color:rgba(148,163,184,.48);margin-top:.4rem'>Based on your resume keywords</div>
             </div>""", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<div class='sec-eye'>Detected Skills</div>", unsafe_allow_html=True)
+            st.markdown("<div class='det-skills-lbl'>✨ Skills Detected in Your Resume</div>", unsafe_allow_html=True)
             if skills:
-                st.markdown(f"<div style='line-height:2.3'>{pills(sorted(skills)[:24],'ph')}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='line-height:2.5'>{pills(sorted(skills)[:24],'ph')}</div>", unsafe_allow_html=True)
                 if len(skills) > 24: st.caption(f"+{len(skills)-24} more detected")
             else:
                 st.markdown("""<div class='no-data-box'>
-                ⚠️ No skills detected. Add more specific keywords to your resume
+                ⚠️ No skills detected. Add specific keywords to your resume
                 (e.g. Python, Excel, SQL, Figma, etc.)
                 </div>""", unsafe_allow_html=True)
 
     # ── TAB 2: SKILL GAP ──────────────────────────────────
     with t2:
-        st.markdown("<div class='sec-eye'>Skill Gap Analysis</div><div class='sec-head'>What you have vs. what you need</div>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-eye'>Gap Analysis</div><div class='sec-head'>What you have vs. what you need</div>", unsafe_allow_html=True)
 
         career_opts = [r["career"] for r in recs]
-        display_opts = [f"{friendly(c)} ({c})" for c in career_opts]
-        sel_idx = st.selectbox("Analyze gap for:", range(len(career_opts)),
+        display_opts = [friendly(c) for c in career_opts]
+        sel_idx = st.selectbox("Analyze skill gap for:", range(len(career_opts)),
                                 format_func=lambda i: display_opts[i], key="gap_sel")
         sel_c = career_opts[sel_idx]
         gd2, res2 = skill_gap(skills, sel_c)
@@ -997,48 +952,47 @@ if analyze and resume_text.strip():
                 <span class='gap-pct'>{m2}%</span>
               </div>
               <div class='gap-track'><div class='gap-fill' style='width:{m2}%'></div></div>
-              <div style='font-size:.7rem;color:rgba(148,163,184,.38);font-family:"JetBrains Mono",monospace;margin-top:.3rem'>
+              <div style='font-size:.82rem;color:rgba(148,163,184,.42);font-family:"JetBrains Mono",monospace;margin-top:.35rem'>
                 {len(gd2["have_core"])} / {len(gd2["have_core"])+len(gd2["miss_core"])} core skills &nbsp;·&nbsp;
                 {have_total} skills matched &nbsp;·&nbsp; {miss_total} skills to acquire
               </div>
             </div>
             """, unsafe_allow_html=True)
 
-            lbl = lambda txt, clr: f"<div style='font-size:.6rem;font-weight:700;color:{clr};letter-spacing:.1em;text-transform:uppercase;margin:.55rem 0 .3rem;font-family:\"JetBrains Mono\",monospace'>{txt}</div>"
+            lbl = lambda txt, clr: f"<div style='font-size:.72rem;font-weight:700;color:{clr};letter-spacing:.1em;text-transform:uppercase;margin:.65rem 0 .4rem;font-family:\"JetBrains Mono\",monospace'>{txt}</div>"
             cc1, cc2, cc3 = st.columns(3)
 
             with cc1:
                 st.markdown("<div class='skill-col-head'>🔵 Core Skills</div>", unsafe_allow_html=True)
                 if gd2["have_core"]:
-                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_core'],'ph')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.75)") + f"<div style='line-height:2.4'>{pills(gd2['have_core'],'ph')}</div>", unsafe_allow_html=True)
                 if gd2["miss_core"]:
-                    st.markdown(lbl("❌ MISSING", "rgba(248,113,113,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_core'],'pm')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("❌ MISSING", "rgba(248,113,113,.75)") + f"<div style='line-height:2.4'>{pills(gd2['miss_core'],'pm')}</div>", unsafe_allow_html=True)
                 if not gd2["have_core"] and not gd2["miss_core"]:
                     st.caption("No core skill data")
 
             with cc2:
                 st.markdown("<div class='skill-col-head'>🟣 Advanced Skills</div>", unsafe_allow_html=True)
                 if gd2["have_adv"]:
-                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_adv'],'ph')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.75)") + f"<div style='line-height:2.4'>{pills(gd2['have_adv'],'ph')}</div>", unsafe_allow_html=True)
                 if gd2["miss_adv"]:
-                    st.markdown(lbl("📖 TO LEARN", "rgba(251,191,36,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_adv'],'pl')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("📖 TO LEARN", "rgba(251,191,36,.75)") + f"<div style='line-height:2.4'>{pills(gd2['miss_adv'],'pl')}</div>", unsafe_allow_html=True)
 
             with cc3:
                 st.markdown("<div class='skill-col-head'>🟠 Tools & Platforms</div>", unsafe_allow_html=True)
                 if gd2["have_tools"]:
-                    st.markdown(lbl("✅ YOU KNOW", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_tools'],'ph')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("✅ YOU KNOW", "rgba(52,211,153,.75)") + f"<div style='line-height:2.4'>{pills(gd2['have_tools'],'ph')}</div>", unsafe_allow_html=True)
                 if gd2["miss_tools"]:
-                    st.markdown(lbl("🛠️ TO ADD", "rgba(251,191,36,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_tools'],'pl')}</div>", unsafe_allow_html=True)
+                    st.markdown(lbl("🛠️ TO ADD", "rgba(251,191,36,.75)") + f"<div style='line-height:2.4'>{pills(gd2['miss_tools'],'pl')}</div>", unsafe_allow_html=True)
         else:
             st.markdown(f"""<div class='no-data-box'>
-            ⚠️ The career <strong>{friendly(sel_c)}</strong> ({sel_c}) matched from your resume
-            but isn't in the skill database yet. This can happen when the model matches you to
-            a less common category. Try selecting a different career from the dropdown above.
+            ⚠️ Skill data not available for <strong>{friendly(sel_c)}</strong>. 
+            Try selecting a different career from the dropdown above.
             </div>""", unsafe_allow_html=True)
 
     # ── TAB 3: ROADMAP ────────────────────────────────────
     with t3:
-        st.markdown(f"<div class='sec-eye'>Personalized Learning Path</div><div class='sec-head'>Road to {friendly(top_c)}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sec-eye'>Personalized Learning Path</div><div class='sec-head'>Your Roadmap to {friendly(top_c)}</div>", unsafe_allow_html=True)
         gf, rf = skill_gap(skills, top_c)
 
         if isinstance(gf, dict) and gf:
@@ -1049,9 +1003,9 @@ if analyze and resume_text.strip():
                 return f"<div class='step-row'><div class='step-n'>{n}</div><div><div class='step-t'>{title}</div><div class='step-s'>{sub}</div></div></div>"
 
             # Phase 1
-            st.markdown(step("1", "Fill core skill gaps", f"Must-haves for {friendly(top_c)}"), unsafe_allow_html=True)
+            st.markdown(step("1", "Fill core skill gaps", f"Must-have skills for {friendly(top_c)}"), unsafe_allow_html=True)
             if prio:
-                st.markdown(f"<div style='margin-left:2.8rem;line-height:2.3;margin-bottom:1rem'>{pills(prio,'pm')}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-left:3rem;line-height:2.5;margin-bottom:1.2rem'>{pills(prio,'pm')}</div>", unsafe_allow_html=True)
             else:
                 st.success("🎉 You already have all core skills for this role!")
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1059,20 +1013,20 @@ if analyze and resume_text.strip():
             # Phase 2
             st.markdown(step("2", "Level up with advanced skills", "Differentiate yourself from other candidates"), unsafe_allow_html=True)
             if adv:
-                st.markdown(f"<div style='margin-left:2.8rem;line-height:2.3;margin-bottom:1rem'>{pills(adv,'pl')}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-left:3rem;line-height:2.5;margin-bottom:1.2rem'>{pills(adv,'pl')}</div>", unsafe_allow_html=True)
             else:
                 st.success("🎉 You're already advanced in this field!")
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Phase 3
-            st.markdown(step("3", f"Curated learning resources", f"Handpicked for {friendly(top_c)}"), unsafe_allow_html=True)
+            # Phase 3 — Resources
+            st.markdown(step("3", "Recommended Learning Resources", f"Handpicked resources for {friendly(top_c)}"), unsafe_allow_html=True)
             if rf:
-                st.markdown("<div style='margin-left:2.8rem;margin-bottom:1.2rem'>", unsafe_allow_html=True)
+                st.markdown("<div style='margin-left:3rem;margin-bottom:1.4rem'>", unsafe_allow_html=True)
                 for r in rf:
                     st.markdown(f"""
                     <div class='res-card'>
                       <div class='res-t'>{r["title"]}</div>
-                      <div class='res-m'>{r["type"]} &nbsp;·&nbsp; <a href='{r["link"]}' target='_blank' style='color:#818cf8;text-decoration:none'>Open resource ↗</a></div>
+                      <div class='res-m'>{r["type"]} &nbsp;·&nbsp; <a href='{r["link"]}' target='_blank' style='color:#818cf8;text-decoration:none;font-weight:600'>Open resource ↗</a></div>
                     </div>""", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
             else:
@@ -1082,37 +1036,33 @@ if analyze and resume_text.strip():
             # Phase 4
             st.markdown(step("4", "Get hired — action plan", "Apply your new skills and get noticed"), unsafe_allow_html=True)
             for icon, txt in [
-                ("🔨", "Build 2-3 portfolio projects and push to GitHub"),
+                ("🔨", "Build 2–3 portfolio projects and push to GitHub"),
                 ("🐙", "Contribute to open source repositories in your domain"),
                 ("📝", "Update LinkedIn with your new skills and project links"),
                 ("🤝", "Join online communities — Discord, Reddit, Slack groups"),
                 ("💼", "Apply with a tailored resume for each job (use JD Matcher!)"),
-                ("🏅", "Get 1-2 certifications to add credibility"),
+                ("🏅", "Get 1–2 certifications to add credibility"),
             ]:
-                st.markdown(f"<div class='ns-item'><span>{icon}</span><span>{txt}</span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='ns-item'><span style='font-size:1.2rem'>{icon}</span><span>{txt}</span></div>", unsafe_allow_html=True)
         else:
             st.markdown(f"""<div class='no-data-box'>
-            ⚠️ <strong>{friendly(top_c)}</strong> matched from your resume but isn't in the
-            knowledge base yet. Try switching to Demo Profile mode and use a more skill-rich resume
-            to get a tech/business career match with full roadmap support.
+            ⚠️ Roadmap data not available for <strong>{friendly(top_c)}</strong>. 
+            Try switching to Demo Profile mode for a full roadmap experience.
             </div>""", unsafe_allow_html=True)
 
     # ── TAB 4: DEEP ANALYSIS ─────────────────────────────
     with t4:
         st.markdown("<div class='sec-eye'>Deep Analysis</div><div class='sec-head'>Full Report</div>", unsafe_allow_html=True)
 
-        # BERT scores table
-        st.markdown("<div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>BERT Similarity Scores</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.85rem;font-weight:700;color:rgba(165,180,252,.75);margin-bottom:.6rem;letter-spacing:.06em;text-transform:uppercase'>Career Match Scores</div>", unsafe_allow_html=True)
         bert_df = pd.DataFrame([{
-            "Category (Raw)": r["career"],
-            "Career (Friendly)": friendly(r["career"]),
-            "Semantic Match (%)": r["score"]
+            "Career": friendly(r["career"]),
+            "Compatibility Score (%)": r["score"]
         } for r in recs])
         st.dataframe(bert_df, use_container_width=True, hide_index=True)
 
-        # Detected skills
         if skills:
-            st.markdown("<br><div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>DETECTED SKILLS</div>", unsafe_allow_html=True)
+            st.markdown("<br><div style='font-size:.85rem;font-weight:700;color:rgba(165,180,252,.75);margin-bottom:.6rem;letter-spacing:.06em;text-transform:uppercase'>Detected Skills</div>", unsafe_allow_html=True)
             sk = sorted(skills); n = 3; chunk = len(sk)//n+1
             scols = st.columns(n)
             for i, col in enumerate(scols):
@@ -1120,42 +1070,37 @@ if analyze and resume_text.strip():
                     sub = sk[i*chunk:(i+1)*chunk]
                     if sub: st.dataframe(pd.DataFrame({"Skill": sub}), use_container_width=True, hide_index=True)
 
-        # Multi-career comparison
-        st.markdown("<br><div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>MULTI-CAREER SKILL COMPARISON</div>", unsafe_allow_html=True)
+        st.markdown("<br><div style='font-size:.85rem;font-weight:700;color:rgba(165,180,252,.75);margin-bottom:.6rem;letter-spacing:.06em;text-transform:uppercase'>Multi-Career Skill Comparison</div>", unsafe_allow_html=True)
         table = []
         for r in recs[:5]:
             g, _ = skill_gap(skills, r["career"])
-            in_kb = r["career"] in CAREER_SKILLS
             if isinstance(g, dict) and g:
                 table.append({
                     "Career": friendly(r["career"]),
-                    "Semantic (%)": r["score"],
-                    "Core Match (%)": g.get("match_pct", 0),
-                    "Skills ✅": len(g.get("have_core",[])) + len(g.get("have_adv",[])),
-                    "Skills 📚": len(g.get("miss_core",[])) + len(g.get("miss_adv",[])),
-                    "In KB": "✅" if in_kb else "⚠️ Limited"
+                    "Compatibility (%)": r["score"],
+                    "Core Skill Match (%)": g.get("match_pct", 0),
+                    "Skills You Have ✅": len(g.get("have_core",[])) + len(g.get("have_adv",[])),
+                    "Skills to Learn 📚": len(g.get("miss_core",[])) + len(g.get("miss_adv",[])),
                 })
             else:
                 table.append({
                     "Career": friendly(r["career"]),
-                    "Semantic (%)": r["score"],
-                    "Core Match (%)": 0,
-                    "Skills ✅": 0,
-                    "Skills 📚": 0,
-                    "In KB": "⚠️ Limited"
+                    "Compatibility (%)": r["score"],
+                    "Core Skill Match (%)": 0,
+                    "Skills You Have ✅": 0,
+                    "Skills to Learn 📚": 0,
                 })
         if table:
             st.dataframe(pd.DataFrame(table), use_container_width=True, hide_index=True)
 
-        # Download report
         lines = [
-            "CAREERLENS AI — ANALYSIS REPORT (v3.0)", "="*50,
-            f"Top Match: {friendly(top_c)} ({top_c})", "="*50,
-            f"TF-IDF Prediction: {friendly(tp)} ({tp})",
+            "CAREERLENS AI — CAREER ANALYSIS REPORT", "="*50,
+            f"Top Career Match: {friendly(top_c)}", "="*50,
+            f"Top Keyword Prediction: {friendly(tp)}",
             f"Skills Detected: {len(skills)}",
             f"Core Skill Match: {match_pct}%", "",
-            "BERT CAREER MATCHES:"
-        ] + [f"  {friendly(r['career'])} ({r['career']}): {r['score']}%" for r in recs] \
+            "TOP CAREER MATCHES:"
+        ] + [f"  {friendly(r['career'])}: {r['score']}%" for r in recs] \
           + ["", "DETECTED SKILLS:"] + [f"  {s}" for s in sorted(skills)] \
           + ["", "CORE SKILL GAPS:"] + [f"  ❌ {s}" for s in gd.get("miss_core", [])]
 
@@ -1168,18 +1113,18 @@ elif analyze and not resume_text.strip():
 else:
     st.markdown("""
     <div style='text-align:center;padding:5rem 1rem 3rem'>
-      <div style='font-size:4rem;margin-bottom:1.5rem'>🔭</div>
-      <div style='font-family:"Syne",sans-serif;font-size:1.6rem;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;margin-bottom:.6rem'>Ready to analyze</div>
-      <div style='font-size:.88rem;color:rgba(148,163,184,.48);max-width:360px;margin:0 auto;line-height:1.7'>
+      <div style='font-size:4.5rem;margin-bottom:1.5rem'>🔭</div>
+      <div style='font-family:"Syne",sans-serif;font-size:2rem;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;margin-bottom:.7rem'>Ready to analyze</div>
+      <div style='font-size:1rem;color:rgba(148,163,184,.52);max-width:380px;margin:0 auto;line-height:1.8'>
         Upload your resume or pick a demo,<br>
-        then click <span style='color:#818cf8;font-weight:600'>Analyze My Resume</span>
+        then click <span style='color:#818cf8;font-weight:700'>Analyze My Resume</span>
       </div>
     </div>
     <div class='land-grid'>
-      <div class='land-f'><div class='lf-icon'>🤖</div><div class='lf-t'>BERT Semantic Matching</div>
-        <div class='lf-d'>Deep NLP embeddings compare your resume to all 24 career profiles using cosine similarity</div></div>
-      <div class='land-f'><div class='lf-icon'>📊</div><div class='lf-t'>TF-IDF Classification</div>
-        <div class='lf-d'>Logistic regression on keyword TF-IDF vectors gives an instant direct prediction</div></div>
+      <div class='land-f'><div class='lf-icon'>🤖</div><div class='lf-t'>Smart Career Matching</div>
+        <div class='lf-d'>AI-powered analysis compares your resume to 24 career profiles to find your best fit</div></div>
+      <div class='land-f'><div class='lf-icon'>📊</div><div class='lf-t'>Instant Prediction</div>
+        <div class='lf-d'>Keyword intelligence delivers an immediate, direct career recommendation</div></div>
       <div class='land-f'><div class='lf-icon'>🎯</div><div class='lf-t'>Skill Gap Analysis</div>
         <div class='lf-d'>Exact skills you have vs. what each of the 24 careers requires — core, advanced, tools</div></div>
       <div class='land-f'><div class='lf-icon'>🗺️</div><div class='lf-t'>Personalized Roadmap</div>

@@ -1,429 +1,559 @@
 """
-Career Path Advisor — Streamlit App (Fixed & Enhanced)
-Based on NLP project: TF-IDF + BERT + Cosine Similarity career recommendation
-Features:
-  - Real-time resume upload (PDF/TXT/paste)
-  - Career path prediction (TF-IDF ML)
-  - BERT semantic similarity recommendations
-  - Skill gap analysis with animated progress bars
-  - Personalized learning roadmap with curated resources
-  - JD (Job Description) matcher
-  - Animated skill radar chart
-  - Dark sidebar with gradient hero
+CareerLens AI — Fixed & Enhanced Edition
+ROOT FIX: CATEGORY_MAP now uses the EXACT names from the Kaggle dataset
+(ACCOUNTANT, INFORMATION-TECHNOLOGY, ENGINEERING, etc.)
+All 24 dataset categories are mapped to skill knowledge base.
+Dark Glassmorphism UI — Syne + Space Grotesk + JetBrains Mono
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import re
-import os
-import tempfile
+import re, os, tempfile
 from sklearn.metrics.pairwise import cosine_similarity
 
-# ─── Page config (MUST be first Streamlit call) ────────────────────────────────
-st.set_page_config(
-    page_title="Career Path Advisor",
-    page_icon="🧭",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="CareerLens AI", page_icon="🔭", layout="wide", initial_sidebar_state="expanded")
 
-# ─── Custom CSS ────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════
+#  FULL CSS — Dark Glassmorphism
+# ══════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-  html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-  }
+*,*::before,*::after{box-sizing:border-box;}
+html,body,[class*="css"],.stApp{background:#040812!important;color:#e2e8f0!important;font-family:'Space Grotesk',sans-serif!important;}
+.stApp::before{content:'';position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 15% 10%,rgba(99,102,241,.13) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 45% at 85% 85%,rgba(16,185,129,.09) 0%,transparent 60%),
+             radial-gradient(ellipse 55% 65% at 50% 50%,rgba(139,92,246,.06) 0%,transparent 70%),
+             #040812;pointer-events:none;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#0f172a;}::-webkit-scrollbar-thumb{background:#3730a3;border-radius:2px;}
+#MainMenu,footer,header{visibility:hidden!important;}
+.block-container{padding:1.5rem 2.5rem 3rem!important;max-width:1400px!important;}
 
-  /* ── Hero ── */
-  .hero {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #24243e 100%);
-    border-radius: 20px;
-    padding: 3rem 2.5rem 2.5rem;
-    margin-bottom: 2rem;
-    color: white;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -80px; right: -80px;
-    width: 260px; height: 260px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(124,111,247,.25) 0%, transparent 70%);
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    bottom: -60px; left: 35%;
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(167,139,250,.15) 0%, transparent 70%);
-  }
-  .hero h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.9rem;
-    margin: 0 0 .5rem;
-    line-height: 1.1;
-    position: relative; z-index: 1;
-  }
-  .hero p {
-    font-size: 1.05rem;
-    opacity: .78;
-    margin: 0;
-    font-weight: 300;
-    position: relative; z-index: 1;
-  }
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 99px;
-    padding: 4px 14px;
-    font-size: .75rem; font-weight: 600;
-    letter-spacing: .06em;
-    color: rgba(255,255,255,.9);
-    margin-bottom: 1rem;
-    position: relative; z-index: 1;
-  }
+/* ── HERO ── */
+.hero-wrap{position:relative;border-radius:24px;overflow:hidden;margin-bottom:2.5rem;padding:3.5rem 3rem 3rem;
+  background:linear-gradient(135deg,rgba(13,18,38,.97) 0%,rgba(28,24,65,.93) 55%,rgba(13,18,38,.97) 100%);
+  border:1px solid rgba(99,102,241,.22);
+  box-shadow:0 0 0 1px rgba(99,102,241,.07),0 30px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);}
+.hero-wrap::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(99,102,241,.022) 40px,rgba(99,102,241,.022) 41px),
+             repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(99,102,241,.022) 40px,rgba(99,102,241,.022) 41px);
+  pointer-events:none;}
+.hero-eye{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;
+  color:#10b981;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);
+  padding:5px 14px;border-radius:99px;margin-bottom:1.2rem;}
+.hero-eye::before{content:'';width:6px;height:6px;border-radius:50%;background:#10b981;
+  box-shadow:0 0 8px #10b981;animation:pdot 2s infinite;}
+@keyframes pdot{0%,100%{opacity:1;box-shadow:0 0 8px #10b981;}50%{opacity:.4;box-shadow:0 0 18px #10b981;}}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(2.4rem,5vw,3.8rem);font-weight:800;
+  line-height:1.05;letter-spacing:-.03em;color:#f8fafc;margin-bottom:.8rem;position:relative;z-index:1;}
+.hero-title span{background:linear-gradient(90deg,#818cf8,#a78bfa,#34d399);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:1rem;font-weight:300;color:rgba(148,163,184,.82);max-width:540px;line-height:1.75;margin-bottom:2rem;}
+.hero-pills{display:flex;flex-wrap:wrap;gap:.45rem;}
+.hero-pill{font-size:.7rem;font-weight:500;color:rgba(165,180,252,.88);
+  background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.18);padding:4px 11px;border-radius:99px;}
+.hero-stats{position:absolute;top:2.5rem;right:2.5rem;display:flex;gap:1.8rem;}
+.hs-num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#f8fafc;line-height:1;}
+.hs-lbl{font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(148,163,184,.45);margin-top:.2rem;}
 
-  /* ── Section labels ── */
-  .section-label {
-    font-size: .68rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
-    color: #7c6ff7; margin-bottom: .35rem;
-  }
-  .section-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.55rem; margin: 0 0 1.2rem;
-    color: #1a1a2e;
-  }
+/* ── SIDEBAR ── */
+[data-testid="stSidebar"]{background:rgba(5,7,16,.98)!important;border-right:1px solid rgba(99,102,241,.12)!important;}
+[data-testid="stSidebar"]>div{padding-top:1.5rem!important;}
+.sb-logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#f8fafc!important;}
+.sb-logo span{color:#818cf8;}
+.sb-ver{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(148,163,184,.3)!important;margin-top:.2rem;letter-spacing:.08em;}
+[data-testid="stSidebar"] label,[data-testid="stSidebar"] p,[data-testid="stSidebar"] .stMarkdown{color:rgba(226,232,240,.72)!important;}
+[data-testid="stSidebar"] hr{border-color:rgba(99,102,241,.12)!important;}
+.sb-sec{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(99,102,241,.6)!important;margin-bottom:.4rem;}
 
-  /* ── Career cards ── */
-  .career-card {
-    background: white;
-    border: 1.5px solid #ede9ff;
-    border-radius: 16px;
-    padding: 1.15rem 1.4rem;
-    margin-bottom: .8rem;
-    position: relative;
-    transition: box-shadow .25s, transform .2s;
-  }
-  .career-card:hover {
-    box-shadow: 0 8px 28px rgba(124,111,247,.18);
-    transform: translateY(-2px);
-  }
-  .career-card.top {
-    border-color: #7c6ff7;
-    background: linear-gradient(135deg, #fdfcff 0%, #f3f0ff 100%);
-    box-shadow: 0 4px 18px rgba(124,111,247,.12);
-  }
-  .career-rank {
-    position: absolute; top: 1rem; right: 1.1rem;
-    font-size: .7rem; font-weight: 700; color: #7c6ff7;
-    background: #ede9ff; padding: 3px 10px; border-radius: 99px;
-  }
-  .career-rank.gold { background: #fef9c3; color: #92400e; }
-  .career-name { font-weight: 700; font-size: 1.05rem; color: #1a1a2e; margin-bottom: .2rem; }
-  .sim-bar-bg { height: 7px; background: #ede9ff; border-radius: 4px; margin-top: .5rem; overflow: hidden; }
-  .sim-bar {
-    height: 7px; border-radius: 4px;
-    background: linear-gradient(90deg, #7c6ff7, #a78bfa, #c4b5fd);
-    transition: width .8s cubic-bezier(.4,0,.2,1);
-  }
+/* ── SECTION LABELS ── */
+.sec-eye{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#818cf8;margin-bottom:.35rem;}
+.sec-head{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#f1f5f9;margin-bottom:1.1rem;letter-spacing:-.02em;}
 
-  /* ── Skill pills ── */
-  .skill-have {
-    display: inline-block; background: #dcfce7; color: #166534;
-    border-radius: 99px; padding: 3px 13px; font-size: .8rem; font-weight: 500; margin: 3px;
-  }
-  .skill-missing {
-    display: inline-block; background: #fee2e2; color: #991b1b;
-    border-radius: 99px; padding: 3px 13px; font-size: .8rem; font-weight: 500; margin: 3px;
-  }
-  .skill-learn {
-    display: inline-block; background: #fef3c7; color: #92400e;
-    border-radius: 99px; padding: 3px 13px; font-size: .8rem; font-weight: 500; margin: 3px;
-  }
-  .skill-neutral {
-    display: inline-block; background: #f1f5f9; color: #475569;
-    border-radius: 99px; padding: 3px 13px; font-size: .8rem; font-weight: 500; margin: 3px;
-  }
+/* ── METRIC TILES ── */
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.metric-tile{background:rgba(13,18,38,.85);border:1px solid rgba(99,102,241,.14);border-radius:16px;
+  padding:1.3rem 1rem;text-align:center;position:relative;overflow:hidden;transition:all .3s;}
+.metric-tile::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#6366f1,#8b5cf6,#34d399);transform:scaleX(0);transition:transform .3s;}
+.metric-tile:hover::after{transform:scaleX(1);}
+.metric-tile:hover{border-color:rgba(99,102,241,.35);box-shadow:0 8px 24px rgba(99,102,241,.12);transform:translateY(-2px);}
+.mt-icon{font-size:1.25rem;margin-bottom:.3rem;}
+.mt-num{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;
+  background:linear-gradient(135deg,#818cf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.mt-lbl{font-size:.68rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:rgba(148,163,184,.48);margin-top:.35rem;}
 
-  /* ── Metric tiles ── */
-  .metric-tile {
-    background: white;
-    border: 1.5px solid #ede9ff;
-    border-radius: 16px;
-    padding: 1.2rem 1rem;
-    text-align: center;
-    transition: box-shadow .2s;
-  }
-  .metric-tile:hover { box-shadow: 0 4px 16px rgba(124,111,247,.12); }
-  .metric-num {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.2rem; color: #7c6ff7; line-height: 1;
-  }
-  .metric-label { font-size: .76rem; color: #64748b; font-weight: 500; margin-top: .3rem; }
+/* ── MATCH CARDS ── */
+.mc{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.13);border-radius:15px;
+  padding:1.15rem 1.35rem;margin-bottom:.7rem;position:relative;overflow:hidden;transition:all .28s;}
+.mc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,#6366f1,#8b5cf6);transform:scaleY(0);transition:transform .28s;border-radius:3px 0 0 3px;}
+.mc:hover{border-color:rgba(99,102,241,.38);transform:translateX(4px);box-shadow:0 6px 20px rgba(99,102,241,.1);}
+.mc:hover::before{transform:scaleY(1);}
+.mc.top{border-color:rgba(129,140,248,.38);background:rgba(28,24,65,.55);}
+.mc.top::before{transform:scaleY(1);}
+.mc-rank{position:absolute;top:.95rem;right:1.1rem;font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;font-weight:600;letter-spacing:.1em;color:#818cf8;
+  background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.18);padding:3px 9px;border-radius:99px;}
+.mc-rank.gld{color:#fbbf24;background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.22);}
+.mc-name{font-family:'Syne',sans-serif;font-size:1.03rem;font-weight:700;color:#f1f5f9;margin-bottom:.18rem;}
+.mc-score{font-size:.78rem;color:rgba(148,163,184,.55);margin-bottom:.55rem;}
+.bar-bg{height:5px;background:rgba(99,102,241,.1);border-radius:3px;overflow:hidden;}
+.bar-fg{height:5px;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa);}
 
-  /* ── Step badge ── */
-  .step-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 50%;
-    background: linear-gradient(135deg, #7c6ff7, #a78bfa);
-    color: white; font-size: .8rem; font-weight: 700;
-    margin-right: .6rem; flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(124,111,247,.35);
-  }
+/* ── PRED BOX ── */
+.pred-box{background:rgba(28,24,65,.5);border:1px solid rgba(129,140,248,.28);border-radius:15px;
+  padding:1.4rem 1.5rem;position:relative;overflow:hidden;}
+.pred-box::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;
+  border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);}
+.pred-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#818cf8;margin-bottom:.45rem;}
+.pred-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#f8fafc;letter-spacing:-.02em;}
 
-  /* ── Resource cards ── */
-  .resource-card {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-left: 4px solid #7c6ff7;
-    border-radius: 0 12px 12px 0;
-    padding: .9rem 1.1rem;
-    margin-bottom: .6rem;
-    transition: border-left-color .2s, box-shadow .2s;
-  }
-  .resource-card:hover {
-    border-left-color: #a78bfa;
-    box-shadow: 0 3px 12px rgba(124,111,247,.1);
-  }
-  .resource-title { font-weight: 600; font-size: .9rem; color: #1a1a2e; }
-  .resource-meta  { font-size: .78rem; color: #64748b; margin-top: 3px; }
+/* ── PILLS ── */
+.ph{display:inline-block;background:rgba(16,185,129,.09);color:#34d399;border:1px solid rgba(16,185,129,.22);
+  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
+.ph:hover{background:rgba(16,185,129,.16);}
+.pm{display:inline-block;background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.18);
+  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
+.pl{display:inline-block;background:rgba(251,191,36,.07);color:#fbbf24;border:1px solid rgba(251,191,36,.18);
+  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;transition:all .2s;}
+.pn{display:inline-block;background:rgba(99,102,241,.08);color:rgba(165,180,252,.8);border:1px solid rgba(99,102,241,.15);
+  border-radius:99px;padding:3px 11px;font-size:.76rem;font-weight:500;margin:3px;}
 
-  /* ── JD match bar ── */
-  .jd-bar-bg { height: 12px; background: #f1f5f9; border-radius: 6px; overflow: hidden; margin: .4rem 0; }
-  .jd-bar {
-    height: 12px; border-radius: 6px;
-    background: linear-gradient(90deg, #7c6ff7, #a78bfa);
-  }
+/* ── TABS ── */
+.stTabs [data-baseweb="tab-list"]{background:rgba(13,18,38,.75)!important;border-radius:12px!important;
+  padding:4px!important;border:1px solid rgba(99,102,241,.14)!important;gap:2px!important;}
+.stTabs [data-baseweb="tab"]{background:transparent!important;border-radius:9px!important;
+  color:rgba(148,163,184,.62)!important;font-family:'Space Grotesk',sans-serif!important;
+  font-weight:500!important;font-size:.86rem!important;padding:.48rem 1.15rem!important;border:none!important;transition:all .2s!important;}
+.stTabs [data-baseweb="tab"]:hover{color:#f1f5f9!important;}
+.stTabs [aria-selected="true"]{background:rgba(99,102,241,.22)!important;color:#a5b4fc!important;
+  box-shadow:0 0 12px rgba(99,102,241,.12)!important;}
+.stTabs [data-baseweb="tab-highlight"]{display:none!important;}
 
-  /* ── Sidebar ── */
-  [data-testid="stSidebar"] { background: linear-gradient(160deg, #0f0c29, #1a1740) !important; }
-  [data-testid="stSidebar"] * { color: rgba(255,255,255,.88) !important; }
-  [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.12) !important; }
-  [data-testid="stSidebar"] .stSlider .stMarkdown { color: rgba(255,255,255,.6) !important; }
-  [data-testid="stSidebar"] .stRadio label { color: rgba(255,255,255,.85) !important; }
+/* ── BUTTON ── */
+.stButton>button{background:linear-gradient(135deg,#4f46e5,#7c3aed)!important;color:#fff!important;
+  border:none!important;border-radius:12px!important;font-family:'Syne',sans-serif!important;
+  font-weight:700!important;font-size:.95rem!important;letter-spacing:.02em!important;
+  padding:.68rem 2.2rem!important;box-shadow:0 4px 20px rgba(79,70,229,.42)!important;transition:all .28s!important;}
+.stButton>button:hover{transform:translateY(-2px)!important;box-shadow:0 8px 28px rgba(79,70,229,.55)!important;}
 
-  /* ── Tabs ── */
-  .stTabs [data-baseweb="tab"] { font-weight: 500; font-size: .92rem; padding-bottom: .5rem; }
-  .stTabs [aria-selected="true"] { color: #7c6ff7 !important; border-bottom-color: #7c6ff7 !important; }
-  .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+/* ── UPLOAD ── */
+[data-testid="stFileUploadDropzone"]{background:rgba(13,18,38,.8)!important;
+  border:2px dashed rgba(99,102,241,.28)!important;border-radius:15px!important;transition:border-color .3s!important;}
+[data-testid="stFileUploadDropzone"]:hover{border-color:rgba(99,102,241,.55)!important;}
+[data-testid="stFileUploadDropzone"] *{color:rgba(148,163,184,.72)!important;}
 
-  /* ── Button ── */
-  .stButton > button {
-    background: linear-gradient(135deg, #7c6ff7, #a78bfa) !important;
-    color: white !important; border: none !important;
-    border-radius: 12px !important; font-weight: 600 !important;
-    font-size: 1rem !important; padding: .65rem 2.2rem !important;
-    transition: all .25s !important;
-    box-shadow: 0 4px 14px rgba(124,111,247,.35) !important;
-  }
-  .stButton > button:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(124,111,247,.45) !important;
-  }
+/* ── INPUTS ── */
+.stTextArea textarea,.stTextInput input{background:rgba(13,18,38,.82)!important;
+  border:1px solid rgba(99,102,241,.18)!important;border-radius:11px!important;color:#e2e8f0!important;
+  font-family:'Space Grotesk',sans-serif!important;}
+.stTextArea textarea:focus,.stTextInput input:focus{border-color:rgba(99,102,241,.48)!important;
+  box-shadow:0 0 0 3px rgba(99,102,241,.08)!important;}
+.stSelectbox>div>div{background:rgba(13,18,38,.82)!important;border:1px solid rgba(99,102,241,.18)!important;
+  border-radius:10px!important;color:#e2e8f0!important;}
 
-  /* ── Upload zone ── */
-  [data-testid="stFileUploadDropzone"] {
-    background: #faf9ff !important;
-    border: 2px dashed #c4b5fd !important;
-    border-radius: 16px !important;
-  }
+/* ── EXPANDER ── */
+.streamlit-expanderHeader{background:rgba(13,18,38,.72)!important;border:1px solid rgba(99,102,241,.13)!important;
+  border-radius:10px!important;color:rgba(165,180,252,.88)!important;font-family:'Space Grotesk',sans-serif!important;font-weight:500!important;}
+.streamlit-expanderContent{background:rgba(6,8,18,.65)!important;border:1px solid rgba(99,102,241,.09)!important;
+  border-top:none!important;border-radius:0 0 10px 10px!important;}
 
-  /* ── Expander ── */
-  .streamlit-expanderHeader { font-weight: 500 !important; font-size: .9rem !important; }
+/* ── ALERTS ── */
+.stAlert{background:rgba(13,18,38,.82)!important;border-radius:12px!important;border:1px solid rgba(99,102,241,.18)!important;color:#e2e8f0!important;}
 
-  /* ── Info / warning ── */
-  .stAlert { border-radius: 12px !important; }
+/* ── DATAFRAME ── */
+[data-testid="stDataFrame"]{border:1px solid rgba(99,102,241,.13)!important;border-radius:12px!important;overflow:hidden;}
+[data-testid="stDataFrame"] th{background:rgba(28,24,65,.75)!important;color:#a5b4fc!important;
+  font-family:'JetBrains Mono',monospace!important;font-size:.7rem!important;letter-spacing:.06em!important;}
+[data-testid="stDataFrame"] td{color:#cbd5e1!important;}
 
-  /* ── Hide footer ── */
-  #MainMenu, footer, header { visibility: hidden; }
+/* ── SPINNER ── */
+.stSpinner>div{border-top-color:#6366f1!important;}
 
-  /* ── Spinner ── */
-  .stSpinner > div { border-top-color: #7c6ff7 !important; }
+/* ── GAP OVERVIEW ── */
+.gap-box{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.16);border-radius:15px;padding:1.3rem 1.5rem;margin-bottom:1.8rem;}
+.gap-row{display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:.3rem;color:#e2e8f0;}
+.gap-pct{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:#818cf8;}
+.gap-track{height:11px;background:rgba(99,102,241,.09);border-radius:6px;overflow:hidden;margin:.4rem 0;}
+.gap-fill{height:11px;border-radius:6px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
 
-  /* ── Divider ── */
-  hr { border: none; border-top: 1.5px solid #f1f0ff; margin: 1.5rem 0; }
+/* ── SKILL COLUMN HEADER ── */
+.skill-col-head{font-weight:700;font-size:.88rem;color:#f1f5f9;margin-bottom:.6rem;padding:.5rem .7rem;
+  background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.12);border-radius:9px;}
+.skill-section-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;margin:.55rem 0 .3rem;}
 
-  /* ── Progress bar override ── */
-  .stProgress > div > div > div { background: linear-gradient(90deg, #7c6ff7, #a78bfa) !important; }
+/* ── STEP ROWS ── */
+.step-row{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:1.1rem;}
+.step-n{flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:.78rem;font-weight:800;color:white;box-shadow:0 0 14px rgba(99,102,241,.38);}
+.step-t{font-family:'Syne',sans-serif;font-size:.93rem;font-weight:700;color:#f1f5f9;margin-bottom:.1rem;}
+.step-s{font-size:.78rem;color:rgba(148,163,184,.52);}
+
+/* ── RESOURCE CARDS ── */
+.res-card{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.1);border-left:3px solid #6366f1;
+  border-radius:0 13px 13px 0;padding:.88rem 1.1rem;margin-bottom:.5rem;transition:all .22s;}
+.res-card:hover{border-left-color:#34d399;box-shadow:0 4px 14px rgba(52,211,153,.07);transform:translateX(3px);}
+.res-t{font-weight:600;font-size:.86rem;color:#f1f5f9;}
+.res-m{font-size:.72rem;color:rgba(148,163,184,.48);margin-top:3px;}
+
+/* ── NEXT STEPS ── */
+.ns-item{display:flex;align-items:center;gap:.75rem;background:rgba(13,18,38,.72);
+  border:1px solid rgba(99,102,241,.09);border-radius:10px;padding:.68rem 1rem;
+  margin-bottom:.42rem;font-size:.83rem;color:#cbd5e1;transition:all .2s;}
+.ns-item:hover{border-color:rgba(99,102,241,.28);color:#f1f5f9;}
+
+/* ── JD BOX ── */
+.jd-box{background:rgba(13,18,38,.82);border:1px solid rgba(99,102,241,.18);
+  border-radius:17px;padding:1.5rem 1.6rem;margin-bottom:1.5rem;}
+.jd-track{height:9px;background:rgba(99,102,241,.09);border-radius:5px;overflow:hidden;margin:.5rem 0;}
+.jd-fill{height:9px;border-radius:5px;background:linear-gradient(90deg,#4f46e5,#7c3aed,#34d399);}
+
+/* ── LANDING ── */
+.land-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.9rem;max-width:660px;margin:0 auto;}
+.land-f{background:rgba(13,18,38,.72);border:1px solid rgba(99,102,241,.11);border-radius:15px;
+  padding:1.25rem 1.35rem;transition:all .28s;}
+.land-f:hover{border-color:rgba(99,102,241,.32);box-shadow:0 6px 20px rgba(99,102,241,.09);transform:translateY(-2px);}
+.lf-icon{font-size:1.5rem;margin-bottom:.4rem;}
+.lf-t{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;color:#f1f5f9;margin-bottom:.2rem;}
+.lf-d{font-size:.76rem;color:rgba(148,163,184,.52);line-height:1.55;}
+
+/* ── WC BADGE ── */
+.wc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.07);
+  border:1px solid rgba(16,185,129,.18);border-radius:99px;padding:4px 13px;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:500;color:#34d399;margin-top:.55rem;}
+
+/* ── DOWNLOAD BTN ── */
+[data-testid="stDownloadButton"] button{background:rgba(13,18,38,.82)!important;
+  border:1px solid rgba(99,102,241,.28)!important;color:#818cf8!important;border-radius:10px!important;
+  font-family:'Space Grotesk',sans-serif!important;font-weight:500!important;transition:all .2s!important;}
+[data-testid="stDownloadButton"] button:hover{background:rgba(99,102,241,.14)!important;
+  border-color:rgba(99,102,241,.48)!important;color:#a5b4fc!important;}
+
+hr{border:none!important;border-top:1px solid rgba(99,102,241,.1)!important;margin:1.8rem 0!important;}
+
+/* ── CATEGORY WARNING BOX ── */
+.no-data-box{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:12px;
+  padding:1rem 1.2rem;font-size:.84rem;color:rgba(251,191,36,.85);line-height:1.6;}
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Skill Knowledge Base ───────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════
+#  KNOWLEDGE BASE — keyed by EXACT Kaggle category names
+#  (ALL CAPS with hyphens, matching df['Category'].unique())
+# ══════════════════════════════════════════════════════════
 CAREER_SKILLS = {
-    "Data Science": {
-        "core":     ["python", "machine learning", "statistics", "pandas", "numpy", "scikit-learn", "sql", "data visualization", "matplotlib", "seaborn"],
-        "advanced": ["deep learning", "tensorflow", "pytorch", "spark", "hadoop", "mlflow", "feature engineering", "a/b testing", "bayesian statistics"],
-        "tools":    ["jupyter", "tableau", "power bi", "git", "docker", "aws", "gcp", "azure"],
+    # ── TECH CAREERS ──────────────────────────────────────
+    "INFORMATION-TECHNOLOGY": {
+        "core":     ["python","machine learning","scikit-learn","tensorflow","pytorch","numpy","pandas","sql","linux","networking","git","docker"],
+        "advanced": ["deep learning","kubernetes","microservices","cloud computing","mlops","transformers","nlp","computer vision","devops","spark"],
+        "tools":    ["aws","gcp","azure","jupyter","vscode","github","postman","jira","confluence"],
         "resources": [
-            {"title": "Python for Data Science Handbook", "type": "📘 Book", "link": "https://jakevdp.github.io/PythonDataScienceHandbook/"},
-            {"title": "fast.ai – Practical Deep Learning", "type": "🎓 Course", "link": "https://course.fast.ai"},
-            {"title": "Kaggle Learn", "type": "🏋️ Platform", "link": "https://www.kaggle.com/learn"},
-            {"title": "StatQuest with Josh Starmer", "type": "▶️ YouTube", "link": "https://www.youtube.com/c/joshstarmer"},
+            {"title":"CS50 – Introduction to Computer Science","type":"🎓 Course","link":"https://cs50.harvard.edu"},
+            {"title":"AWS Certified Solutions Architect","type":"📜 Cert","link":"https://aws.amazon.com/certification/"},
+            {"title":"Linux Foundation Training","type":"🏋️ Platform","link":"https://training.linuxfoundation.org"},
+            {"title":"The Pragmatic Programmer","type":"📘 Book","link":"https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/"},
         ]
     },
-    "Machine Learning": {
-        "core":     ["python", "machine learning", "scikit-learn", "tensorflow", "pytorch", "numpy", "pandas", "linear algebra", "calculus", "statistics"],
-        "advanced": ["neural networks", "transformers", "nlp", "computer vision", "reinforcement learning", "model deployment", "mlops"],
-        "tools":    ["jupyter", "git", "docker", "kubernetes", "mlflow", "weights & biases", "hugging face"],
+    "ENGINEERING": {
+        "core":     ["python","matlab","autocad","solidworks","mechanical design","electrical circuits","project management","statistics","simulation","testing"],
+        "advanced": ["finite element analysis","cad/cam","plc programming","scada","embedded systems","robotics","six sigma","lean manufacturing"],
+        "tools":    ["matlab","autocad","solidworks","ansys","catia","labview","git","jira","ms project"],
         "resources": [
-            {"title": "Hands-On ML with Scikit-Learn (Géron)", "type": "📘 Book", "link": "https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/"},
-            {"title": "CS229 Stanford ML Course", "type": "🎓 Course", "link": "https://cs229.stanford.edu"},
-            {"title": "Hugging Face NLP Course", "type": "🎓 Course", "link": "https://huggingface.co/learn/nlp-course"},
-            {"title": "Papers With Code", "type": "🔬 Research", "link": "https://paperswithcode.com"},
+            {"title":"MIT OpenCourseWare – Engineering","type":"🎓 Course","link":"https://ocw.mit.edu"},
+            {"title":"Coursera Engineering Specializations","type":"🎓 Course","link":"https://www.coursera.org/browse/engineering"},
+            {"title":"IEEE Spectrum","type":"📰 Publication","link":"https://spectrum.ieee.org"},
         ]
     },
-    "Web Designing": {
-        "core":     ["html", "css", "javascript", "responsive design", "figma", "ux design", "ui design", "typography", "color theory"],
-        "advanced": ["react", "vue", "angular", "typescript", "tailwind", "framer motion", "animation", "accessibility", "web performance"],
-        "tools":    ["figma", "adobe xd", "sketch", "webpack", "vite", "git", "vercel", "netlify"],
+    "DESIGNER": {
+        "core":     ["figma","adobe xd","photoshop","illustrator","ui design","ux design","typography","color theory","responsive design","wireframing"],
+        "advanced": ["motion design","after effects","3d modeling","blender","design systems","accessibility","user research","prototyping","animation"],
+        "tools":    ["figma","adobe creative suite","sketch","invision","zeplin","miro","notion","framer"],
         "resources": [
-            {"title": "The Odin Project", "type": "🎓 Course", "link": "https://www.theodinproject.com"},
-            {"title": "CSS Tricks", "type": "📝 Blog", "link": "https://css-tricks.com"},
-            {"title": "Refactoring UI", "type": "📘 Book", "link": "https://www.refactoringui.com"},
-            {"title": "freeCodeCamp Responsive Design", "type": "🎓 Course", "link": "https://www.freecodecamp.org"},
+            {"title":"Google UX Design Certificate","type":"📜 Cert","link":"https://grow.google/certificates/ux-design/"},
+            {"title":"Refactoring UI","type":"📘 Book","link":"https://www.refactoringui.com"},
+            {"title":"Nielsen Norman Group","type":"📰 Blog","link":"https://www.nngroup.com/articles/"},
         ]
     },
-    "Java Developer": {
-        "core":     ["java", "oop", "spring", "spring boot", "maven", "gradle", "sql", "rest api", "junit", "design patterns"],
-        "advanced": ["microservices", "kafka", "redis", "docker", "kubernetes", "reactive programming", "jpa", "hibernate"],
-        "tools":    ["intellij", "eclipse", "git", "jenkins", "sonarqube", "postman", "jira"],
+    "DIGITAL-MEDIA": {
+        "core":     ["social media","content creation","seo","google analytics","copywriting","video editing","email marketing","adobe premiere","canva","wordpress"],
+        "advanced": ["paid advertising","facebook ads","google ads","marketing automation","hubspot","a/b testing","cro","influencer marketing","podcast production"],
+        "tools":    ["hootsuite","buffer","canva","adobe premiere","final cut pro","google analytics","semrush","mailchimp"],
         "resources": [
-            {"title": "Effective Java – Joshua Bloch", "type": "📘 Book", "link": "https://www.oreilly.com/library/view/effective-java/9780134686097/"},
-            {"title": "Spring Framework Docs", "type": "📄 Docs", "link": "https://spring.io/guides"},
-            {"title": "Baeldung Java Tutorials", "type": "📝 Blog", "link": "https://www.baeldung.com"},
+            {"title":"Google Digital Marketing Certificate","type":"📜 Cert","link":"https://grow.google/certificates/digital-marketing-ecommerce/"},
+            {"title":"HubSpot Academy","type":"🏋️ Platform","link":"https://academy.hubspot.com"},
+            {"title":"Moz SEO Learning Center","type":"🏋️ Platform","link":"https://moz.com/learn/seo"},
         ]
     },
-    "Python Developer": {
-        "core":     ["python", "oop", "django", "flask", "fastapi", "rest api", "sql", "postgresql", "testing", "git"],
-        "advanced": ["async python", "celery", "redis", "docker", "kubernetes", "graphql", "sqlalchemy", "pydantic"],
-        "tools":    ["vscode", "pycharm", "git", "docker", "aws", "gcp", "postman", "pytest"],
+    "CONSULTANT": {
+        "core":     ["business analysis","project management","stakeholder management","powerpoint","excel","data analysis","problem solving","communication","consulting","strategy"],
+        "advanced": ["change management","agile","six sigma","financial modeling","sql","tableau","power bi","process improvement","erp","risk management"],
+        "tools":    ["ms office","excel","powerpoint","tableau","power bi","salesforce","jira","slack"],
         "resources": [
-            {"title": "Fluent Python", "type": "📘 Book", "link": "https://www.oreilly.com/library/view/fluent-python-2nd/9781492056348/"},
-            {"title": "Real Python", "type": "🏋️ Platform", "link": "https://realpython.com"},
-            {"title": "FastAPI Docs", "type": "📄 Docs", "link": "https://fastapi.tiangolo.com"},
+            {"title":"McKinsey Case Interview Prep","type":"🎓 Course","link":"https://www.mckinsey.com/careers/interviewing"},
+            {"title":"Coursera Business Analytics","type":"🎓 Course","link":"https://www.coursera.org/specializations/business-analytics"},
         ]
     },
-    "DevOps Engineer": {
-        "core":     ["linux", "bash", "docker", "kubernetes", "ci/cd", "git", "terraform", "ansible", "jenkins", "monitoring"],
-        "advanced": ["helm", "istio", "prometheus", "grafana", "elk stack", "vault", "service mesh", "gitops", "argocd"],
-        "tools":    ["aws", "gcp", "azure", "github actions", "gitlab ci", "datadog", "pagerduty"],
+    # ── FINANCE & BUSINESS ────────────────────────────────
+    "ACCOUNTANT": {
+        "core":     ["accounting","financial statements","excel","quickbooks","tax","auditing","bookkeeping","balance sheet","payroll","gaap"],
+        "advanced": ["financial modeling","erp","sap","oracle financials","sql","power bi","ifrs","forensic accounting","budgeting","variance analysis"],
+        "tools":    ["quickbooks","sap","oracle","excel","xero","tally","ms dynamics","power bi"],
         "resources": [
-            {"title": "The DevOps Handbook", "type": "📘 Book", "link": "https://www.amazon.com/DevOps-Handbook/dp/1942788002"},
-            {"title": "KodeKloud", "type": "🏋️ Platform", "link": "https://kodekloud.com"},
-            {"title": "AWS Free Tier", "type": "☁️ Platform", "link": "https://aws.amazon.com/free"},
+            {"title":"CPA Exam Study Guide","type":"📜 Cert","link":"https://www.aicpa-cima.com/certifications/certified-public-accountant"},
+            {"title":"AccountingCoach","type":"🏋️ Platform","link":"https://www.accountingcoach.com"},
+            {"title":"Coursera Financial Accounting","type":"🎓 Course","link":"https://www.coursera.org/learn/wharton-accounting"},
         ]
     },
-    "Database": {
-        "core":     ["sql", "postgresql", "mysql", "mongodb", "indexing", "normalization", "transactions", "stored procedures", "query optimization"],
-        "advanced": ["redis", "cassandra", "elasticsearch", "data warehousing", "etl", "dbt", "snowflake", "bigquery", "replication"],
-        "tools":    ["dbeaver", "pgadmin", "mongodb compass", "datagrip", "apache airflow"],
+    "FINANCE": {
+        "core":     ["financial analysis","excel","financial modeling","bloomberg","investment","portfolio management","risk management","accounting","valuation","sql"],
+        "advanced": ["derivatives","fixed income","equity research","cfa","python","vba","machine learning","alternative investments","hedge fund","private equity"],
+        "tools":    ["bloomberg","excel","python","r","sql","tableau","power bi","reuters eikon"],
         "resources": [
-            {"title": "Use The Index, Luke!", "type": "📘 Book", "link": "https://use-the-index-luke.com"},
-            {"title": "PostgreSQL Tutorial", "type": "🎓 Course", "link": "https://www.postgresqltutorial.com"},
-            {"title": "MongoDB University", "type": "🎓 Course", "link": "https://university.mongodb.com"},
+            {"title":"CFA Institute","type":"📜 Cert","link":"https://www.cfainstitute.org"},
+            {"title":"Investopedia Academy","type":"🏋️ Platform","link":"https://academy.investopedia.com"},
+            {"title":"Wall Street Prep","type":"🎓 Course","link":"https://www.wallstreetprep.com"},
         ]
     },
-    "Network Security Engineer": {
-        "core":     ["networking", "tcp/ip", "firewalls", "vpn", "penetration testing", "vulnerability assessment", "siem", "linux", "cryptography"],
-        "advanced": ["threat intelligence", "incident response", "zero trust", "soc", "osint", "malware analysis", "forensics", "devsecops"],
-        "tools":    ["wireshark", "nmap", "metasploit", "burp suite", "splunk", "nessus", "kali linux"],
+    "BANKING": {
+        "core":     ["financial analysis","credit analysis","banking","excel","risk management","lending","compliance","customer service","kyc","anti-money laundering"],
+        "advanced": ["financial modeling","python","sql","bloomberg","investment banking","treasury","derivatives","regulatory reporting","stress testing"],
+        "tools":    ["bloomberg","excel","sql","python","temenos","sap","ms dynamics"],
         "resources": [
-            {"title": "TryHackMe", "type": "🏋️ Platform", "link": "https://tryhackme.com"},
-            {"title": "CompTIA Security+ Study Guide", "type": "📘 Book", "link": "https://www.comptia.org/certifications/security"},
-            {"title": "Cybrary", "type": "🎓 Course", "link": "https://www.cybrary.it"},
+            {"title":"CFA Institute","type":"📜 Cert","link":"https://www.cfainstitute.org"},
+            {"title":"FMVA – Financial Modeling","type":"📜 Cert","link":"https://corporatefinanceinstitute.com/certifications/financial-modeling-valuation-analyst-fmva/"},
         ]
     },
-    "Hadoop": {
-        "core":     ["hadoop", "mapreduce", "hdfs", "hive", "spark", "pig", "sqoop", "yarn", "java", "python"],
-        "advanced": ["kafka", "hbase", "zookeeper", "storm", "flink", "delta lake", "iceberg", "data lakehouse"],
-        "tools":    ["cloudera", "hortonworks", "aws emr", "databricks", "airflow", "nifi"],
+    # ── HR & BUSINESS ─────────────────────────────────────
+    "HR": {
+        "core":     ["recruitment","employee relations","payroll","performance management","onboarding","hris","labor law","compensation","training","talent acquisition"],
+        "advanced": ["hr analytics","organizational development","succession planning","diversity & inclusion","workday","sap hr","leadership development","employer branding"],
+        "tools":    ["workday","sap successfactors","bamboohr","linkedin recruiter","microsoft teams","excel","tableau"],
         "resources": [
-            {"title": "Hadoop: The Definitive Guide", "type": "📘 Book", "link": "https://www.oreilly.com/library/view/hadoop-the-definitive/9781491901687/"},
-            {"title": "Databricks Academy", "type": "🏋️ Platform", "link": "https://academy.databricks.com"},
+            {"title":"SHRM Certification","type":"📜 Cert","link":"https://www.shrm.org/certification"},
+            {"title":"LinkedIn Learning HR","type":"🏋️ Platform","link":"https://www.linkedin.com/learning/topics/hr"},
+            {"title":"Josh Bersin Academy","type":"🎓 Course","link":"https://joshbersin.com/academy/"},
         ]
     },
-    "ETL Developer": {
-        "core":     ["sql", "python", "etl tools", "informatica", "talend", "data warehousing", "star schema", "data modeling", "ssis", "oracle"],
-        "advanced": ["dbt", "airflow", "spark", "snowflake", "bigquery", "azure data factory", "real-time streaming", "kafka"],
-        "tools":    ["informatica", "talend", "ssis", "airflow", "dbt", "snowflake", "azure data factory"],
+    "BUSINESS-DEVELOPMENT": {
+        "core":     ["sales","business development","crm","negotiation","lead generation","market research","excel","powerpoint","networking","cold calling"],
+        "advanced": ["salesforce","hubspot","account management","partnership development","financial modeling","sql","data analysis","product strategy","gtm strategy"],
+        "tools":    ["salesforce","hubspot","linkedin sales navigator","excel","powerpoint","zoom","slack"],
         "resources": [
-            {"title": "dbt Learn", "type": "🏋️ Platform", "link": "https://learn.getdbt.com"},
-            {"title": "The Data Warehouse Toolkit", "type": "📘 Book", "link": "https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/books/data-warehouse-dw-toolkit/"},
+            {"title":"Salesforce Trailhead","type":"🏋️ Platform","link":"https://trailhead.salesforce.com"},
+            {"title":"HubSpot Sales Certification","type":"📜 Cert","link":"https://academy.hubspot.com/courses/sales-training"},
+            {"title":"The Challenger Sale","type":"📘 Book","link":"https://www.challengerinc.com/the-challenger-sale-book/"},
         ]
     },
-    "Blockchain": {
-        "core":     ["solidity", "ethereum", "web3.js", "smart contracts", "cryptography", "defi", "nft", "truffle", "hardhat", "javascript"],
-        "advanced": ["layer 2 solutions", "zk proofs", "cross-chain bridges", "tokenomics", "dao governance", "ipfs", "rust (solana)"],
-        "tools":    ["metamask", "remix", "hardhat", "truffle", "infura", "etherscan", "openzeppelin"],
+    "SALES": {
+        "core":     ["sales","crm","cold calling","lead generation","negotiation","customer relationship","product knowledge","excel","communication","closing"],
+        "advanced": ["salesforce","hubspot","account executive","enterprise sales","saas sales","pipeline management","territory management","sales analytics"],
+        "tools":    ["salesforce","hubspot","outreach","linkedin","zoom","excel","slack","gong"],
         "resources": [
-            {"title": "CryptoZombies", "type": "🏋️ Platform", "link": "https://cryptozombies.io"},
-            {"title": "Ethereum Documentation", "type": "📄 Docs", "link": "https://ethereum.org/en/developers/docs/"},
-            {"title": "Alchemy University", "type": "🎓 Course", "link": "https://university.alchemy.com"},
+            {"title":"Salesforce Trailhead","type":"🏋️ Platform","link":"https://trailhead.salesforce.com"},
+            {"title":"SPIN Selling","type":"📘 Book","link":"https://www.amazon.com/SPIN-Selling-Neil-Rackham/dp/0070511136"},
         ]
     },
-    "Automation Testing": {
-        "core":     ["selenium", "python", "java", "pytest", "testng", "rest assured", "api testing", "ci/cd", "git", "agile"],
-        "advanced": ["cypress", "playwright", "appium", "performance testing", "jmeter", "bdd", "cucumber", "pact", "k6"],
-        "tools":    ["selenium", "appium", "postman", "jira", "jenkins", "github actions", "browserstack"],
+    # ── HEALTHCARE & WELLNESS ──────────────────────────────
+    "HEALTHCARE": {
+        "core":     ["patient care","medical terminology","emr","hipaa","clinical documentation","nursing","diagnosis","treatment planning","medication management","vital signs"],
+        "advanced": ["telemedicine","healthcare analytics","hl7","fhir","medical coding","icd-10","population health","care coordination","clinical research"],
+        "tools":    ["epic","cerner","meditech","athenahealth","ms office","tableau"],
         "resources": [
-            {"title": "Test Automation University", "type": "🏋️ Platform", "link": "https://testautomationu.applitools.com"},
-            {"title": "Playwright Docs", "type": "📄 Docs", "link": "https://playwright.dev"},
-            {"title": "ISTQB Cert", "type": "📜 Cert", "link": "https://www.istqb.org"},
+            {"title":"Coursera Healthcare Specializations","type":"🎓 Course","link":"https://www.coursera.org/browse/health"},
+            {"title":"HealthIT.gov Training","type":"🏋️ Platform","link":"https://www.healthit.gov/topic/onc-hitech-programs/workforce-development-programs"},
         ]
     },
-    "DotNet Developer": {
-        "core":     ["c#", ".net core", "asp.net", "entity framework", "sql", "rest api", "linq", "azure", "visual studio", "git"],
-        "advanced": ["blazor", "signalr", "microservices", "docker", "kubernetes", "azure devops", "grpc", "identity server"],
-        "tools":    ["visual studio", "vs code", "azure devops", "sql server", "postman", "docker"],
+    "FITNESS": {
+        "core":     ["personal training","exercise science","nutrition","program design","anatomy","client assessment","cpr","strength training","cardio","coaching"],
+        "advanced": ["sports performance","corrective exercise","group fitness","sports nutrition","rehabilitation","wearable tech","online coaching","business development"],
+        "tools":    ["trainerize","mindbody","myfitnesspal","exercise.com","zoom","canva"],
         "resources": [
-            {"title": "Microsoft Learn – .NET", "type": "🏋️ Platform", "link": "https://learn.microsoft.com/en-us/dotnet/"},
-            {"title": "C# in Depth – Jon Skeet", "type": "📘 Book", "link": "https://www.manning.com/books/c-sharp-in-depth-fourth-edition"},
+            {"title":"NASM Certified Personal Trainer","type":"📜 Cert","link":"https://www.nasm.org/certified-personal-trainer"},
+            {"title":"ACE Fitness","type":"📜 Cert","link":"https://www.acefitness.org/fitness-certifications/"},
         ]
     },
-    "Operations Manager": {
-        "core":     ["operations management", "process improvement", "lean", "six sigma", "supply chain", "budgeting", "kpi tracking", "team leadership"],
-        "advanced": ["erp systems", "vendor management", "logistics optimization", "capacity planning", "risk management", "total quality management"],
-        "tools":    ["excel", "power bi", "sap", "oracle erp", "ms project", "tableau", "jira"],
+    # ── EDUCATION ─────────────────────────────────────────
+    "TEACHER": {
+        "core":     ["lesson planning","curriculum development","classroom management","assessment","differentiated instruction","communication","google classroom","microsoft teams","student engagement","special education"],
+        "advanced": ["instructional design","edtech","data-driven instruction","project-based learning","sel","grant writing","stem","blended learning","lms administration"],
+        "tools":    ["google classroom","canvas","blackboard","microsoft teams","kahoot","nearpod","zoom","powerpoint"],
         "resources": [
-            {"title": "Lean Six Sigma Green Belt", "type": "📜 Cert", "link": "https://www.asq.org/cert/six-sigma-green-belt"},
-            {"title": "APICS CPIM", "type": "📜 Cert", "link": "https://www.ascm.org/cpim/"},
+            {"title":"Google for Education Training","type":"🏋️ Platform","link":"https://edu.google.com/intl/ALL_us/for-educators/certification/"},
+            {"title":"Coursera Education Courses","type":"🎓 Course","link":"https://www.coursera.org/browse/social-sciences/education"},
+        ]
+    },
+    "ADVOCATE": {
+        "core":     ["legal research","case management","client counseling","litigation","contract drafting","negotiation","compliance","legal writing","court procedures","legislation"],
+        "advanced": ["corporate law","intellectual property","mergers & acquisitions","arbitration","regulatory affairs","legal analytics","e-discovery","blockchain law"],
+        "tools":    ["westlaw","lexisnexis","clio","ms office","docusign","relativity"],
+        "resources": [
+            {"title":"Bar Exam Prep – Themis","type":"📜 Cert","link":"https://www.themisbar.com"},
+            {"title":"Coursera Law Specializations","type":"🎓 Course","link":"https://www.coursera.org/browse/social-sciences/law"},
+        ]
+    },
+    # ── SKILLED TRADES & INDUSTRY ─────────────────────────
+    "CHEF": {
+        "core":     ["culinary arts","food safety","haccp","menu planning","kitchen management","food cost control","recipe development","team management","catering","inventory"],
+        "advanced": ["molecular gastronomy","restaurant management","food styling","food photography","nutritional planning","global cuisines","franchise management","catering operations"],
+        "tools":    ["restaurant365","toast pos","square","ms office","canva"],
+        "resources": [
+            {"title":"Culinary Institute of America","type":"🎓 Course","link":"https://www.ciachef.edu"},
+            {"title":"ServSafe Certification","type":"📜 Cert","link":"https://www.servsafe.com"},
+        ]
+    },
+    "CONSTRUCTION": {
+        "core":     ["project management","blueprint reading","autocad","cost estimation","safety management","osha","scheduling","construction management","procurement","building codes"],
+        "advanced": ["bim","revit","lean construction","green building","leed","primavera","ms project","risk management","contract management"],
+        "tools":    ["autocad","revit","ms project","primavera","procore","bluebeam","excel"],
+        "resources": [
+            {"title":"PMP Certification","type":"📜 Cert","link":"https://www.pmi.org/certifications/project-management-pmp"},
+            {"title":"Autodesk Training","type":"🏋️ Platform","link":"https://www.autodesk.com/training"},
+        ]
+    },
+    "AUTOMOBILE": {
+        "core":     ["automotive repair","diagnostics","obd2","engine repair","electrical systems","transmission","brake systems","customer service","parts management","safety inspection"],
+        "advanced": ["ev/hybrid systems","adas","automotive software","dealership management","warranty claims","fleet management","automotive engineering","connected vehicles"],
+        "tools":    ["mitchell1","alldata","identifix","reynolds and reynolds","excel","dealer management system"],
+        "resources": [
+            {"title":"ASE Certification","type":"📜 Cert","link":"https://www.ase.com"},
+            {"title":"Automotive Training Center","type":"🏋️ Platform","link":"https://www.autotrainingcentre.com"},
+        ]
+    },
+    "AVIATION": {
+        "core":     ["aircraft maintenance","faa regulations","flight operations","navigation","air traffic","safety protocols","avionics","meteorology","aircraft systems","weight & balance"],
+        "advanced": ["instrument rating","multi-engine","airline transport pilot","cabin crew","flight dispatch","aviation safety management","drone operations","mro management"],
+        "tools":    ["foreflight","garmin avionics","jeppesen","ms office","faa databases"],
+        "resources": [
+            {"title":"FAA Training & Testing","type":"🎓 Course","link":"https://www.faa.gov/training_testing"},
+            {"title":"IATA Training","type":"🎓 Course","link":"https://www.iata.org/en/training/"},
+        ]
+    },
+    "AGRICULTURE": {
+        "core":     ["crop management","soil science","irrigation","pest management","agronomy","livestock management","food safety","agricultural equipment","farm management","sustainability"],
+        "advanced": ["precision agriculture","gis/remote sensing","agricultural data analytics","drone technology","supply chain management","organic farming","agri-business","climate science"],
+        "tools":    ["trimble","john deere precision ag","arcgis","excel","farm management software"],
+        "resources": [
+            {"title":"Coursera Agriculture Courses","type":"🎓 Course","link":"https://www.coursera.org/courses?query=agriculture"},
+            {"title":"FAO e-Learning","type":"🏋️ Platform","link":"https://elearning.fao.org"},
+        ]
+    },
+    "APPAREL": {
+        "core":     ["fashion design","textile knowledge","pattern making","visual merchandising","retail management","trend forecasting","inventory management","buyer","sourcing","quality control"],
+        "advanced": ["cad fashion design","sustainable fashion","supply chain management","e-commerce","brand management","fashion marketing","production management"],
+        "tools":    ["clo3d","adobe illustrator","photoshop","ms office","shopify","sap retail"],
+        "resources": [
+            {"title":"Parsons School of Design Online","type":"🎓 Course","link":"https://www.coursera.org/parsons"},
+            {"title":"Vogue Business","type":"📰 Publication","link":"https://www.voguebusiness.com"},
+        ]
+    },
+    "ARTS": {
+        "core":     ["fine arts","illustration","drawing","painting","portfolio development","art history","creative direction","exhibition","community art","art education"],
+        "advanced": ["digital art","3d modeling","animation","video production","nft art","gallery management","art therapy","grant writing","public art installations"],
+        "tools":    ["adobe photoshop","illustrator","procreate","blender","after effects","canva","unity"],
+        "resources": [
+            {"title":"Skillshare Art Classes","type":"🏋️ Platform","link":"https://www.skillshare.com"},
+            {"title":"Domestika","type":"🏋️ Platform","link":"https://www.domestika.org"},
+        ]
+    },
+    "PUBLIC-RELATIONS": {
+        "core":     ["press releases","media relations","crisis communication","copywriting","social media","event management","brand management","stakeholder communication","journalism","seo"],
+        "advanced": ["digital pr","influencer marketing","data-driven pr","podcast pr","employee advocacy","reputation management","thought leadership","analytics","content strategy"],
+        "tools":    ["cision","meltwater","sprout social","canva","ms office","google analytics","mailchimp"],
+        "resources": [
+            {"title":"PRSA Accreditation (APR)","type":"📜 Cert","link":"https://www.prsa.org/professional-development/apr"},
+            {"title":"Coursera PR Courses","type":"🎓 Course","link":"https://www.coursera.org/courses?query=public+relations"},
+        ]
+    },
+    "BPO": {
+        "core":     ["customer service","call center","crm","data entry","communication","problem solving","technical support","quality assurance","kpi tracking","escalation management"],
+        "advanced": ["workforce management","six sigma","rpa","chatbot implementation","omnichannel support","bpo operations","client management","sla management"],
+        "tools":    ["salesforce","zendesk","freshdesk","avaya","genesys","excel","ms teams"],
+        "resources": [
+            {"title":"HDI Customer Service Rep","type":"📜 Cert","link":"https://www.thinkhdi.com/certification/customer-service-representative.aspx"},
+            {"title":"Coursera Customer Service","type":"🎓 Course","link":"https://www.coursera.org/courses?query=customer+service"},
         ]
     },
 }
 
-CATEGORY_MAP = {
-    "Data Science": "Data Science",
-    "Machine Learning": "Machine Learning",
-    "Web Designing": "Web Designing",
-    "Java Developer": "Java Developer",
-    "Python Developer": "Python Developer",
-    "DevOps Engineer": "DevOps Engineer",
-    "Database": "Database",
-    "Network Security Engineer": "Network Security Engineer",
-    "Hadoop": "Hadoop",
-    "ETL Developer": "ETL Developer",
-    "Blockchain": "Blockchain",
-    "Automation Testing": "Automation Testing",
-    "DotNet Developer": "DotNet Developer",
-    "Operations Manager": "Operations Manager",
+# ══════════════════════════════════════════════════════════
+#  EXACT CATEGORY MAP — must match Kaggle df['Category'] values
+# ══════════════════════════════════════════════════════════
+CATEGORY_MAP = {cat: cat for cat in CAREER_SKILLS}
+# Also handle any display-name variants returned by the model
+CATEGORY_MAP.update({
+    "INFORMATION-TECHNOLOGY": "INFORMATION-TECHNOLOGY",
+    "ENGINEERING":             "ENGINEERING",
+    "DESIGNER":                "DESIGNER",
+    "DIGITAL-MEDIA":           "DIGITAL-MEDIA",
+    "CONSULTANT":              "CONSULTANT",
+    "ACCOUNTANT":              "ACCOUNTANT",
+    "FINANCE":                 "FINANCE",
+    "BANKING":                 "BANKING",
+    "HR":                      "HR",
+    "BUSINESS-DEVELOPMENT":    "BUSINESS-DEVELOPMENT",
+    "SALES":                   "SALES",
+    "HEALTHCARE":              "HEALTHCARE",
+    "FITNESS":                 "FITNESS",
+    "TEACHER":                 "TEACHER",
+    "ADVOCATE":                "ADVOCATE",
+    "CHEF":                    "CHEF",
+    "CONSTRUCTION":            "CONSTRUCTION",
+    "AUTOMOBILE":              "AUTOMOBILE",
+    "AVIATION":                "AVIATION",
+    "AGRICULTURE":             "AGRICULTURE",
+    "APPAREL":                 "APPAREL",
+    "ARTS":                    "ARTS",
+    "PUBLIC-RELATIONS":        "PUBLIC-RELATIONS",
+    "BPO":                     "BPO",
+})
+
+# Friendly display names for UI
+FRIENDLY_NAMES = {
+    "INFORMATION-TECHNOLOGY": "Information Technology",
+    "ENGINEERING":             "Engineering",
+    "DESIGNER":                "UI/UX Designer",
+    "DIGITAL-MEDIA":           "Digital Media & Marketing",
+    "CONSULTANT":              "Consultant",
+    "ACCOUNTANT":              "Accountant",
+    "FINANCE":                 "Finance",
+    "BANKING":                 "Banking",
+    "HR":                      "Human Resources",
+    "BUSINESS-DEVELOPMENT":    "Business Development",
+    "SALES":                   "Sales",
+    "HEALTHCARE":              "Healthcare",
+    "FITNESS":                 "Fitness & Wellness",
+    "TEACHER":                 "Teacher / Educator",
+    "ADVOCATE":                "Legal / Advocate",
+    "CHEF":                    "Chef / Culinary Arts",
+    "CONSTRUCTION":            "Construction",
+    "AUTOMOBILE":              "Automobile",
+    "AVIATION":                "Aviation",
+    "AGRICULTURE":             "Agriculture",
+    "APPAREL":                 "Fashion / Apparel",
+    "ARTS":                    "Arts & Creative",
+    "PUBLIC-RELATIONS":        "Public Relations",
+    "BPO":                     "BPO / Customer Service",
 }
 
-# ─── Model loading ──────────────────────────────────────────────────────────────
+def friendly(cat): return FRIENDLY_NAMES.get(cat, cat.replace("-"," ").title())
+
+# ══════════════════════════════════════════════════════════
+#  MODEL LOADING
+# ══════════════════════════════════════════════════════════
 @st.cache_resource(show_spinner=False)
 def load_models():
     import nltk
     nltk.download('stopwords', quiet=True)
     nltk.download('wordnet', quiet=True)
     nltk.download('omw-1.4', quiet=True)
-
     from sentence_transformers import SentenceTransformer
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.linear_model import LogisticRegression
@@ -431,661 +561,628 @@ def load_models():
     import kagglehub
 
     path = kagglehub.dataset_download("snehaanbhawal/resume-dataset")
-    csv_file = None
-    for root, _, filenames in os.walk(path):
-        for fn in filenames:
-            if fn.endswith(".csv"):
-                csv_file = os.path.join(root, fn)
-                break
-
+    csv_file = next((os.path.join(r,f) for r,_,fs in os.walk(path) for f in fs if f.endswith(".csv")), None)
     df = pd.read_csv(csv_file)
-    df.dropna(subset=['Resume_str', 'Category'], inplace=True)
+    df.dropna(subset=['Resume_str','Category'], inplace=True)
     df.reset_index(drop=True, inplace=True)
 
     from nltk.corpus import stopwords
     from nltk.stem import WordNetLemmatizer
-    stop_words = set(stopwords.words('english'))
-    lemmatizer = WordNetLemmatizer()
+    stops = set(stopwords.words('english'))
+    lem   = WordNetLemmatizer()
 
-    def clean_resume(text):
-        text = str(text)
-        text = re.sub(r'http\S+|www\S+', ' ', text)
-        text = re.sub(r'<.*?>', ' ', text)
-        text = re.sub(r'[^a-zA-Z\s]', ' ', text)
-        text = text.lower()
-        tokens = text.split()
-        tokens = [lemmatizer.lemmatize(w) for w in tokens
-                  if w not in stop_words and len(w) > 2]
-        return ' '.join(tokens)
+    def clean(t):
+        t = re.sub(r'http\S+|www\S+|<.*?>|[^a-zA-Z\s]', ' ', str(t)).lower()
+        return ' '.join([lem.lemmatize(w) for w in t.split() if w not in stops and len(w) > 2])
 
-    df['cleaned_resume'] = df['Resume_str'].apply(clean_resume)
-
+    df['clean'] = df['Resume_str'].apply(clean)
     le = LabelEncoder()
     df['label'] = le.fit_transform(df['Category'])
 
-    tfidf = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), sublinear_tf=True)
-    X_tfidf = tfidf.fit_transform(df['cleaned_resume'])
+    tfidf = TfidfVectorizer(max_features=5000, ngram_range=(1,2), sublinear_tf=True)
+    X = tfidf.fit_transform(df['clean'])
+    lr = LogisticRegression(max_iter=1000, C=5, random_state=42)
+    lr.fit(X, df['label'])
 
-    lr_model = LogisticRegression(max_iter=1000, C=5, random_state=42)
-    lr_model.fit(X_tfidf, df['label'])
+    bert = SentenceTransformer('all-MiniLM-L6-v2')
+    def trunc(t, n=150): return ' '.join(str(t).split()[:n])
 
-    bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+    profiles = {}
+    for cat in df['Category'].unique():
+        docs = df[df['Category']==cat]['clean'].apply(trunc).tolist()
+        emb  = bert.encode(docs, batch_size=32, show_progress_bar=False)
+        profiles[cat] = emb.mean(axis=0)
 
-    def truncate(text, max_words=150):
-        return ' '.join(str(text).split()[:max_words])
+    names = list(profiles.keys())
+    vecs  = np.array(list(profiles.values()))
+    return {"clean": clean, "tfidf": tfidf, "lr": lr, "le": le,
+            "bert": bert, "names": names, "vecs": vecs, "trunc": trunc}
 
-    career_profiles = {}
-    for category in df['Category'].unique():
-        docs = df[df['Category'] == category]['cleaned_resume'].apply(truncate).tolist()
-        embeddings = bert_model.encode(docs, batch_size=32, show_progress_bar=False)
-        career_profiles[category] = embeddings.mean(axis=0)
-
-    career_names = list(career_profiles.keys())
-    career_vectors = np.array(list(career_profiles.values()))
-
-    tfidf_full = TfidfVectorizer(max_features=10000, ngram_range=(1, 2), sublinear_tf=True)
-    tfidf_full.fit(df['cleaned_resume'].tolist())
-    tfidf_career_profiles = {}
-    for category in df['Category'].unique():
-        docs = df[df['Category'] == category]['cleaned_resume'].tolist()
-        combined = ' '.join(docs)
-        tfidf_career_profiles[category] = tfidf_full.transform([combined]).toarray()[0]
-
-    return {
-        "clean_resume": clean_resume,
-        "tfidf": tfidf,
-        "lr_model": lr_model,
-        "le": le,
-        "bert_model": bert_model,
-        "career_names": career_names,
-        "career_vectors": career_vectors,
-        "tfidf_full": tfidf_full,
-        "tfidf_career_names": list(tfidf_career_profiles.keys()),
-        "tfidf_career_matrix": np.array(list(tfidf_career_profiles.values())),
-        "truncate": truncate,
-        "df": df,
-    }
-
-
-# ─── Helper functions ───────────────────────────────────────────────────────────
-def extract_text_from_pdf(file_bytes):
+# ══════════════════════════════════════════════════════════
+#  HELPERS
+# ══════════════════════════════════════════════════════════
+def pdf_text(b):
     try:
         import pdfplumber
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(file_bytes)
-            tmp_path = tmp.name
-        text = ""
-        with pdfplumber.open(tmp_path) as pdf:
-            for page in pdf.pages:
-                text += (page.extract_text() or "") + "\n"
-        os.unlink(tmp_path)
-        return text.strip()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as t:
+            t.write(b); tp = t.name
+        txt = ""
+        with pdfplumber.open(tp) as pdf:
+            for pg in pdf.pages: txt += (pg.extract_text() or "") + "\n"
+        os.unlink(tp)
+        return txt.strip()
     except ImportError:
-        st.warning("⚠️ pdfplumber not installed. Run: `pip install pdfplumber`")
-        return ""
+        st.warning("Run: pip install pdfplumber"); return ""
     except Exception as e:
-        st.error(f"PDF extraction error: {e}")
-        return ""
+        st.error(f"PDF error: {e}"); return ""
 
+def extract_skills(resume):
+    rl = resume.lower(); found = set()
+    for cd in CAREER_SKILLS.values():
+        for k, lst in cd.items():
+            if isinstance(lst, list) and lst and isinstance(lst[0], str):
+                for s in lst:
+                    if s.lower() in rl: found.add(s)
+    return found
 
-def extract_user_skills(resume_text):
-    resume_lower = resume_text.lower()
-    found_skills = set()
-    all_skills = set()
-    for career_data in CAREER_SKILLS.values():
-        for key, skill_list in career_data.items():
-            if isinstance(skill_list, list) and skill_list and isinstance(skill_list[0], str):
-                all_skills.update(skill_list)
-    for skill in all_skills:
-        if skill.lower() in resume_lower:
-            found_skills.add(skill)
-    return found_skills
-
-
-def get_skill_gap(user_skills, target_career):
-    career_key = CATEGORY_MAP.get(target_career, target_career)
-    if career_key not in CAREER_SKILLS:
+def skill_gap(user_skills, career_key):
+    key = CATEGORY_MAP.get(career_key, career_key)
+    if key not in CAREER_SKILLS:
         return {}, []
-    career_data = CAREER_SKILLS[career_key]
-    core_skills    = set(career_data.get("core", []))
-    advanced_skills = set(career_data.get("advanced", []))
-    tools          = set(career_data.get("tools", []))
-    resources      = career_data.get("resources", [])
-    user_lower     = {s.lower() for s in user_skills}
-
+    cd = CAREER_SKILLS[key]
+    ul = {s.lower() for s in user_skills}
+    core  = set(cd.get("core", []))
+    adv   = set(cd.get("advanced", []))
+    tools = set(cd.get("tools", []))
     return {
-        "have_core":       sorted(core_skills & user_lower),
-        "missing_core":    sorted(core_skills - user_lower),
-        "have_advanced":   sorted(advanced_skills & user_lower),
-        "missing_advanced": sorted(advanced_skills - user_lower),
-        "have_tools":      sorted(tools & user_lower),
-        "missing_tools":   sorted(tools - user_lower),
-        "match_pct":       round(len(core_skills & user_lower) / max(len(core_skills), 1) * 100),
-    }, resources
+        "have_core":  sorted(core & ul),
+        "miss_core":  sorted(core - ul),
+        "have_adv":   sorted(adv & ul),
+        "miss_adv":   sorted(adv - ul),
+        "have_tools": sorted(tools & ul),
+        "miss_tools": sorted(tools - ul),
+        "match_pct":  round(len(core & ul) / max(len(core), 1) * 100),
+    }, cd.get("resources", [])
 
+def bert_recs(m, text, n=5):
+    c = m["clean"](text)
+    v = m["bert"].encode([m["trunc"](c)])
+    s = cosine_similarity(v, m["vecs"])[0]
+    idx = s.argsort()[::-1][:n]
+    return [{"career": m["names"][i], "score": round(float(s[i])*100, 1)} for i in idx]
 
-def recommend_career_bert(models, resume_text, top_n=5):
-    cleaned = models["clean_resume"](resume_text)
-    truncated = models["truncate"](cleaned)
-    resume_vec = models["bert_model"].encode([truncated])
-    sims = cosine_similarity(resume_vec, models["career_vectors"])[0]
-    top_idx = sims.argsort()[::-1][:top_n]
-    return [{"career": models["career_names"][i], "score": round(float(sims[i]) * 100, 1)} for i in top_idx]
+def tfidf_pred(m, text):
+    c = m["clean"](text)
+    v = m["tfidf"].transform([c])
+    return m["le"].inverse_transform(m["lr"].predict(v))[0]
 
-
-def predict_career_tfidf(models, resume_text):
-    cleaned = models["clean_resume"](resume_text)
-    vec = models["tfidf"].transform([cleaned])
-    label = models["lr_model"].predict(vec)[0]
-    return models["le"].inverse_transform([label])[0]
-
-
-def jd_skill_match(resume_text, jd_text):
-    """Simple keyword overlap score between resume and JD."""
-    resume_words = set(re.findall(r'\b[a-z][a-z0-9+#.]{1,}\b', resume_text.lower()))
-    jd_words     = set(re.findall(r'\b[a-z][a-z0-9+#.]{1,}\b', jd_text.lower()))
+def jd_match(resume, jd):
+    rw = set(re.findall(r'\b[a-z][a-z0-9+#.]{1,}\b', resume.lower()))
+    jw = set(re.findall(r'\b[a-z][a-z0-9+#.]{1,}\b', jd.lower()))
     stop = {"and","the","for","with","you","are","our","have","will","to","of","in","a","an",
             "is","be","as","we","or","on","at","by","this","that","your","their","more","from"}
-    jd_words -= stop
-    if not jd_words:
-        return 0, set(), set()
-    matched = resume_words & jd_words
-    missing = jd_words - resume_words
-    score = round(len(matched) / len(jd_words) * 100, 1)
-    return score, matched, missing
+    jw -= stop
+    if not jw: return 0, set(), set()
+    matched = rw & jw
+    return round(len(matched)/len(jw)*100, 1), matched, jw-rw
 
+# ══════════════════════════════════════════════════════════
+#  DEMO RESUMES — crafted to match actual Kaggle categories
+# ══════════════════════════════════════════════════════════
+DEMOS = {
+    "🖥️ Information Technology (ML/AI)": """
+Cherry Agarwal | ML & IT Engineer | cherry@email.com | Nagpur, India
 
-# ─── Sidebar ────────────────────────────────────────────────────────────────────
+SUMMARY
+Machine learning and information technology engineer with hands-on experience building
+NLP, computer vision, and deep learning systems. Strong foundation in Python, TensorFlow,
+PyTorch, scikit-learn, transformers, and cloud infrastructure.
+
+SKILLS
+Languages: Python, SQL, R, Java
+ML/AI: TensorFlow, PyTorch, scikit-learn, BERT, transformers, NLP, computer vision,
+       deep learning, neural networks, machine learning, feature engineering, statistics
+Data: pandas, numpy, matplotlib, seaborn, spark, a/b testing, data visualization
+Cloud/MLOps: Docker, Kubernetes, AWS, linux, networking, git, MLflow, Hugging Face
+Tools: Jupyter, vscode, github, postman, jira, azure, gcp
+
+EXPERIENCE
+ML Engineer Intern — TechCorp AI (2023)
+• Built NLP classification using BERT + transformers — 94% accuracy
+• Deployed models using Docker + Kubernetes on AWS reducing latency 40%
+• Data pipelines with pandas, numpy processing 1M+ daily records
+• Computer vision defect detection model in PyTorch, TensorFlow
+
+EDUCATION
+B.Tech Computer Science — VNIT Nagpur (2020–2024) | CGPA: 8.7
+CERTIFICATIONS: Google TensorFlow Developer, AWS ML Specialty
+""",
+    "💼 Business Development": """
+Rahul Mehta | Business Development Manager | rahul@email.com
+
+SUMMARY
+Results-driven business development professional with 5 years experience in
+sales, lead generation, CRM management, and partnership development.
+
+SKILLS
+Core: sales, business development, crm, negotiation, lead generation, market research,
+      excel, powerpoint, networking, cold calling, communication, customer relationship
+Advanced: salesforce, hubspot, account management, financial modeling, sql, data analysis,
+          product strategy, partnership development
+
+EXPERIENCE
+Business Development Manager — StartupXYZ (2020–2024)
+• Generated $2M pipeline through strategic lead generation and cold calling
+• Managed Salesforce CRM for team of 10, improving conversion by 25%
+• Built partnership network of 50+ companies through negotiation
+
+EDUCATION
+MBA Marketing — IIM Nagpur (2019) | B.Com — Mumbai University (2017)
+""",
+    "🎨 UI/UX Designer": """
+Priya Sharma | UI/UX Designer | priya@email.com
+
+SUMMARY
+Creative UI/UX designer with 4 years building beautiful digital products.
+Expert in Figma, user research, and design systems.
+
+SKILLS
+Core: figma, adobe xd, photoshop, illustrator, ui design, ux design, typography,
+      color theory, responsive design, wireframing, prototyping, user research
+Advanced: motion design, after effects, design systems, accessibility, animation,
+          3d modeling, blender
+
+EXPERIENCE
+UI/UX Designer — DesignStudio (2021–2024)
+• Designed 20+ mobile apps and web platforms in Figma
+• Led user research and usability testing for fintech product
+• Built design system used by 15 engineers
+
+EDUCATION
+B.Des Visual Communication — NID Ahmedabad (2021)
+""",
+    "🏥 Healthcare Professional": """
+Dr. Anita Singh | Healthcare Professional | anita@email.com
+
+SUMMARY
+Dedicated healthcare professional with expertise in patient care,
+clinical documentation, and medical terminology.
+
+SKILLS
+Core: patient care, medical terminology, emr, hipaa, clinical documentation,
+      nursing, diagnosis, treatment planning, medication management, vital signs
+Advanced: telemedicine, healthcare analytics, medical coding, icd-10, care coordination
+
+TOOLS: epic, cerner, ms office
+
+EXPERIENCE
+Clinical Coordinator — City Hospital (2020–2024)
+• Managed patient care for 30+ daily patients
+• EMR documentation in Epic with 100% compliance
+• Coordinated telemedicine consultations during COVID-19
+
+EDUCATION
+MBBS — AIIMS Delhi (2019) | MD Internal Medicine — (2022)
+""",
+}
+
+# ══════════════════════════════════════════════════════════
+#  SIDEBAR
+# ══════════════════════════════════════════════════════════
 with st.sidebar:
+    st.markdown("<div class='sb-logo'>🔭 Career<span>Lens</span></div><div class='sb-ver'>v3.0 · Fixed + Enhanced</div>", unsafe_allow_html=True)
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<div class='sb-sec'>Input Mode</div>", unsafe_allow_html=True)
+    mode = st.radio("", ["📄 Upload PDF/TXT", "✏️ Paste Resume", "🎮 Demo Profile"], label_visibility="collapsed")
+    st.markdown("<hr>", unsafe_allow_html=True)
+    top_n = st.slider("Career matches to show", 3, 10, 5)
+    st.markdown("<hr>", unsafe_allow_html=True)
+    enable_jd = st.checkbox("🔗 JD Matcher", value=False, help="Match resume keywords against a job description")
+    st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='margin-bottom:1.5rem;padding-top:.5rem'>
-      <div style='font-size:1.5rem;font-weight:800;letter-spacing:-.02em'>🧭 Career Advisor</div>
-      <div style='font-size:.77rem;opacity:.55;margin-top:.25rem'>NLP-powered path finder</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("---")
-
-    st.markdown("<div style='font-size:.68rem;opacity:.55;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem'>Input method</div>", unsafe_allow_html=True)
-    input_mode = st.radio("", ["📄 Upload Resume", "✏️ Paste Text", "🎮 Quick Demo"], label_visibility="collapsed")
-
-    st.markdown("---")
-    top_n = st.slider("Top N career matches", 3, 10, 5)
-
-    st.markdown("---")
-    enable_jd = st.checkbox("🔗 Enable JD Matcher", value=False)
-
-    st.markdown("---")
-    st.markdown("""
-    <div style='font-size:.78rem;opacity:.7;line-height:1.65'>
-    <strong>How it works</strong><br>
-    ① Upload your resume<br>
-    ② BERT + TF-IDF analyze it<br>
-    ③ Get career matches, skill gaps &amp; a roadmap
-    </div>
-    <div style='margin-top:1rem;font-size:.72rem;opacity:.45'>
-    Model: all-MiniLM-L6-v2<br>
-    Data: Kaggle Resume Dataset
+    <div style='font-size:.73rem;color:rgba(148,163,184,.48);line-height:1.78'>
+      <div style='color:rgba(165,180,252,.62);font-weight:600;margin-bottom:.35rem;font-size:.76rem'>How it works</div>
+      ① Upload or paste your resume<br>
+      ② BERT encodes semantic meaning<br>
+      ③ TF-IDF + LR classifies keywords<br>
+      ④ Skill gap + roadmap generated
+      <br><br>
+      <span style='color:rgba(99,102,241,.42);font-size:.62rem;font-family:"JetBrains Mono",monospace'>
+        Model: all-MiniLM-L6-v2<br>
+        Dataset: Kaggle — 24 categories<br>
+        2484 resumes · 5000 TF-IDF features
+      </span>
     </div>
     """, unsafe_allow_html=True)
 
-
-# ─── Hero ───────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════
+#  HERO
+# ══════════════════════════════════════════════════════════
 st.markdown("""
-<div class='hero'>
-  <div class='hero-badge'>✨ AI-Powered · NLP · BERT + TF-IDF</div>
-  <h1>Your Career Path,<br><em>Decoded by AI</em></h1>
-  <p>Upload your resume and get instant career recommendations,<br>skill gap analysis, and a personalized learning roadmap.</p>
+<div class='hero-wrap'>
+  <div class='hero-stats'>
+    <div><div class='hs-num'>24</div><div class='hs-lbl'>Categories</div></div>
+    <div><div class='hs-num'>BERT</div><div class='hs-lbl'>Semantic AI</div></div>
+    <div><div class='hs-num'>NLP</div><div class='hs-lbl'>Powered</div></div>
+  </div>
+  <div class='hero-eye'>AI-Powered Career Intelligence — v3.0 Fixed</div>
+  <div class='hero-title'>Decode Your<br><span>Career Path</span></div>
+  <div class='hero-sub'>
+    Upload your resume. Get instant career matches, skill gap analysis,
+    and a personalized learning roadmap powered by BERT + TF-IDF NLP.<br>
+    <span style='font-size:.85rem;color:rgba(52,211,153,.7)'>
+    ✅ Now correctly maps all 24 Kaggle resume categories
+    </span>
+  </div>
+  <div class='hero-pills'>
+    <span class='hero-pill'>🤖 BERT Embeddings</span>
+    <span class='hero-pill'>📊 TF-IDF + Logistic Regression</span>
+    <span class='hero-pill'>🎯 Skill Gap (All 24 categories)</span>
+    <span class='hero-pill'>🗺️ Learning Roadmap</span>
+    <span class='hero-pill'>🔗 JD Matcher</span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-
-# ─── Input Section ──────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════
+#  INPUT
+# ══════════════════════════════════════════════════════════
 resume_text = ""
 
-if input_mode == "📄 Upload Resume":
-    st.markdown("<div class='section-label'>Step 1</div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Upload your resume</div>", unsafe_allow_html=True)
-
-    uploaded = st.file_uploader(
-        "Drag & drop your resume (PDF or TXT)",
-        type=["pdf", "txt"],
-        label_visibility="collapsed"
-    )
-
+if mode == "📄 Upload PDF/TXT":
+    st.markdown("<div class='sec-eye'>Step 01</div><div class='sec-head'>Upload your resume</div>", unsafe_allow_html=True)
+    uploaded = st.file_uploader("Drop PDF or TXT", type=["pdf","txt"], label_visibility="collapsed")
     if uploaded:
         if uploaded.type == "application/pdf":
-            resume_text = extract_text_from_pdf(uploaded.read())
+            resume_text = pdf_text(uploaded.read())
             if not resume_text:
-                # fallback raw decode
-                uploaded.seek(0)
-                resume_text = uploaded.read().decode("utf-8", errors="ignore")
+                uploaded.seek(0); resume_text = uploaded.read().decode("utf-8", errors="ignore")
         else:
             resume_text = uploaded.read().decode("utf-8", errors="ignore")
-
         if resume_text:
-            col_prev, col_stat = st.columns([3, 1])
-            with col_prev:
-                with st.expander("👁️ Preview extracted text", expanded=False):
-                    st.text(resume_text[:2000] + ("…" if len(resume_text) > 2000 else ""))
-            with col_stat:
-                wc = len(resume_text.split())
-                st.markdown(f"""
-                <div class='metric-tile' style='margin-top:.2rem'>
-                  <div class='metric-num' style='font-size:1.5rem'>{wc}</div>
-                  <div class='metric-label'>words extracted</div>
-                </div>
-                """, unsafe_allow_html=True)
+            wc = len(resume_text.split())
+            st.markdown(f"<div class='wc-badge'>✅ {wc} words extracted</div>", unsafe_allow_html=True)
+            with st.expander("👁 Preview extracted text"):
+                st.code(resume_text[:2000] + ("…" if len(resume_text)>2000 else ""), language=None)
         else:
-            st.error("❌ Could not extract text. Try the Paste Text option instead.")
+            st.error("Could not extract text. Try Paste Text option.")
 
-elif input_mode == "✏️ Paste Text":
-    st.markdown("<div class='section-label'>Step 1</div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Paste your resume text</div>", unsafe_allow_html=True)
-    resume_text = st.text_area(
-        "Resume text",
-        placeholder="Paste your full resume here — skills, experience, education, projects, certifications…",
-        height=300,
-        label_visibility="collapsed"
-    )
+elif mode == "✏️ Paste Resume":
+    st.markdown("<div class='sec-eye'>Step 01</div><div class='sec-head'>Paste your resume</div>", unsafe_allow_html=True)
+    resume_text = st.text_area("Resume", placeholder="Paste your full resume — skills, experience, projects, education…", height=320, label_visibility="collapsed")
 
-else:  # Quick Demo
-    st.markdown("<div class='section-label'>Step 1</div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Choose a demo profile</div>", unsafe_allow_html=True)
-    demo_options = {
-        "🤖 ML / AI Engineer": """
-Experienced ML engineer with 4 years building production machine learning systems.
-Strong background in Python, scikit-learn, TensorFlow, PyTorch, BERT, transformers, NLP, computer vision.
-Built data pipelines using pandas, numpy, spark; deployed models with Docker, Kubernetes, AWS SageMaker.
-Proficient in git, MLflow, Weights & Biases, statistics, feature engineering, deep learning, A/B testing.
-B.Tech Computer Science, IIT Bombay. Published research on NLP and reinforcement learning.
-""",
-        "🌐 Frontend Developer": """
-Creative frontend developer with 4 years building responsive web applications.
-Expert in HTML, CSS, JavaScript, React, TypeScript, Tailwind CSS, Figma, responsive design, accessibility.
-Strong understanding of UX design, UI design, typography, color theory, and web performance.
-Built 20+ production websites. Familiar with git, webpack, Vite, Vercel, and REST APIs.
-""",
-        "🗄️ Data Analyst": """
-Data analyst with 3 years turning raw data into business insights.
-Skilled in SQL, Python, pandas, numpy, Excel, Tableau, Power BI, statistics, data visualization.
-Experience with A/B testing, ETL pipelines, PostgreSQL, data warehousing, and business reporting.
-Strong communicator; translates technical findings for non-technical stakeholders.
-""",
-    }
-    selected_demo = st.selectbox("Choose a demo profile:", list(demo_options.keys()))
-    resume_text = demo_options[selected_demo]
-    st.info("✅ Demo resume loaded. Click **Analyze My Resume** below.")
+else:
+    st.markdown("<div class='sec-eye'>Step 01</div><div class='sec-head'>Choose demo profile</div>", unsafe_allow_html=True)
+    sel = st.selectbox("Demo", list(DEMOS.keys()), label_visibility="collapsed")
+    resume_text = DEMOS[sel]
+    st.info("✅ Demo loaded — click Analyze below")
+    with st.expander("👁 View demo resume"):
+        st.code(resume_text, language=None)
 
-
-# ─── JD Matcher (optional) ──────────────────────────────────────────────────────
 jd_text = ""
 if enable_jd:
-    st.markdown("---")
-    st.markdown("<div class='section-label'>Optional</div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Paste Job Description</div>", unsafe_allow_html=True)
-    jd_text = st.text_area(
-        "Job description",
-        placeholder="Paste the job description you're targeting — skills, requirements, responsibilities…",
-        height=180,
-        label_visibility="collapsed"
-    )
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<div class='sec-eye'>Optional — JD Match</div><div class='sec-head'>Paste Job Description</div>", unsafe_allow_html=True)
+    jd_text = st.text_area("JD", placeholder="Paste the job description you're targeting…", height=180, label_visibility="collapsed")
 
-
-# ─── Analyze button ─────────────────────────────────────────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
-col_btn, col_hint = st.columns([2, 5])
-with col_btn:
-    analyze = st.button("🔍 Analyze My Resume", use_container_width=True)
-with col_hint:
-    st.markdown("""
-    <div style='padding-top:.6rem;font-size:.82rem;color:#94a3b8'>
-    First run downloads models (~500 MB) and may take 60–90 s.
-    Subsequent runs are instant.
+cb, ch = st.columns([2,5])
+with cb:
+    analyze = st.button("🔭 Analyze My Resume", use_container_width=True)
+with ch:
+    st.markdown("""<div style='padding:.65rem 0;font-size:.76rem;color:rgba(148,163,184,.38);
+    font-family:"JetBrains Mono",monospace'>First run ~60-90s (downloads BERT ~90MB + Kaggle dataset). Instant after.</div>""", unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════════════════
+#  RESULTS
+# ══════════════════════════════════════════════════════════
+if analyze and resume_text.strip():
+    with st.spinner("⚙️ Loading AI models (first run ~60-90s)…"):
+        try:
+            m = load_models()
+        except Exception as e:
+            st.error(f"Model loading failed: {e}")
+            st.code("pip install nltk sentence-transformers kagglehub scikit-learn pdfplumber pandas numpy torch transformers")
+            st.stop()
+
+    with st.spinner("🔬 Analyzing resume…"):
+        tp     = tfidf_pred(m, resume_text)
+        recs   = bert_recs(m, resume_text, n=top_n)
+        skills = extract_skills(resume_text)
+        top_c  = recs[0]["career"] if recs else tp
+        gd, res = skill_gap(skills, top_c)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    match_pct  = gd.get("match_pct", 0) if isinstance(gd, dict) else 0
+    miss_count = len(gd.get("miss_core", [])) if isinstance(gd, dict) else 0
+
+    # ── METRICS ─────────────────────────────────────────
+    st.markdown(f"""
+    <div class='metric-grid'>
+      <div class='metric-tile'><div class='mt-icon'>🎯</div><div class='mt-num'>{len(skills)}</div><div class='mt-lbl'>Skills Detected</div></div>
+      <div class='metric-tile'><div class='mt-icon'>📊</div><div class='mt-num'>{match_pct}%</div><div class='mt-lbl'>Core Skill Match</div></div>
+      <div class='metric-tile'><div class='mt-icon'>📚</div><div class='mt-num'>{miss_count}</div><div class='mt-lbl'>Skills to Learn</div></div>
+      <div class='metric-tile'><div class='mt-icon'>🔗</div><div class='mt-num'>{len(res)}</div><div class='mt-lbl'>Resources Found</div></div>
     </div>
     """, unsafe_allow_html=True)
 
-
-# ─── Results ────────────────────────────────────────────────────────────────────
-if analyze and resume_text.strip():
-
-    with st.spinner("⚙️ Loading AI models (first run ~60–90 s)…"):
-        try:
-            models = load_models()
-        except Exception as e:
-            st.error(f"❌ Model loading failed: {e}")
-            st.info("Make sure all packages are installed. Run:\n```\npip install nltk sentence-transformers kagglehub scikit-learn pdfplumber pandas numpy\n```")
-            st.stop()
-
-    with st.spinner("🔬 Analyzing your resume…"):
-        tfidf_pred  = predict_career_tfidf(models, resume_text)
-        bert_recs   = recommend_career_bert(models, resume_text, top_n=top_n)
-        user_skills = extract_user_skills(resume_text)
-        top_career  = bert_recs[0]["career"] if bert_recs else tfidf_pred
-        gap_data, resources = get_skill_gap(user_skills, top_career)
-
-    st.markdown("---")
-
-    # ── Quick stats ──────────────────────────────────────────────────────────
-    c1, c2, c3, c4 = st.columns(4)
-    match_pct     = gap_data.get("match_pct", 0) if isinstance(gap_data, dict) else 0
-    missing_count = len(gap_data.get("missing_core", [])) if isinstance(gap_data, dict) else 0
-
-    with c1:
-        st.markdown(f"""<div class='metric-tile'>
-          <div class='metric-num'>{len(user_skills)}</div>
-          <div class='metric-label'>Skills detected</div></div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""<div class='metric-tile'>
-          <div class='metric-num'>{match_pct}%</div>
-          <div class='metric-label'>Core skill match</div></div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""<div class='metric-tile'>
-          <div class='metric-num'>{missing_count}</div>
-          <div class='metric-label'>Skills to learn</div></div>""", unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"""<div class='metric-tile'>
-          <div class='metric-num'>{len(resources)}</div>
-          <div class='metric-label'>Learning resources</div></div>""", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── JD Match box (if enabled) ─────────────────────────────────────────────
+    # ── JD MATCH ─────────────────────────────────────────
     if enable_jd and jd_text.strip():
-        jd_score, jd_matched, jd_missing = jd_skill_match(resume_text, jd_text)
-        st.markdown("<div class='section-label'>JD Match Analysis</div>", unsafe_allow_html=True)
+        js, jmatch, jmiss = jd_match(resume_text, jd_text)
+        top_miss = sorted(list(jmiss), key=len, reverse=True)[:18]
+        miss_html = "".join([f"<span class='pm'>{w}</span>" for w in top_miss])
         st.markdown(f"""
-        <div style='background:white;border:1.5px solid #ede9ff;border-radius:16px;padding:1.3rem 1.5rem;margin-bottom:1.5rem'>
+        <div class='jd-box'>
           <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem'>
-            <div style='font-weight:700;font-size:1rem;color:#1a1a2e'>Resume ↔ Job Description Match</div>
-            <div style='font-size:1.6rem;font-weight:800;color:#7c6ff7;font-family:"DM Serif Display",serif'>{jd_score}%</div>
+            <div>
+              <div class='sec-eye'>JD Match Analysis</div>
+              <div style='font-family:"Syne",sans-serif;font-size:1.1rem;font-weight:700;color:#f1f5f9'>Resume ↔ Job Description</div>
+            </div>
+            <div style='font-family:"Syne",sans-serif;font-size:2.2rem;font-weight:800;
+              background:linear-gradient(135deg,#818cf8,#34d399);-webkit-background-clip:text;
+              -webkit-text-fill-color:transparent;background-clip:text'>{js}%</div>
           </div>
-          <div class='jd-bar-bg'><div class='jd-bar' style='width:{min(jd_score,100)}%'></div></div>
-          <div style='margin-top:.8rem;font-size:.82rem;color:#64748b'>
-            <strong>{len(jd_matched)}</strong> keywords matched &nbsp;·&nbsp;
-            <strong>{len(jd_missing)}</strong> JD keywords missing from resume
+          <div class='jd-track'><div class='jd-fill' style='width:{min(js,100)}%'></div></div>
+          <div style='font-size:.72rem;color:rgba(148,163,184,.4);font-family:"JetBrains Mono",monospace;margin-top:.35rem'>
+            {len(jmatch)} keywords matched · {len(jmiss)} keywords missing
           </div>
+          {"<div style='margin-top:1rem'><div style='font-size:.68rem;font-weight:700;color:rgba(248,113,113,.7);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem'>Add these to your resume</div>" + miss_html + "</div>" if top_miss else ""}
         </div>
         """, unsafe_allow_html=True)
-        if jd_missing:
-            top_missing = sorted(list(jd_missing), key=len, reverse=True)[:20]
-            missing_html = "".join([f"<span class='skill-missing'>{w}</span>" for w in top_missing])
-            st.markdown(f"**Top keywords to add to your resume:**<br>{missing_html}", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Tabs ─────────────────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4 = st.tabs(["🎯 Career Matches", "🔍 Skill Gap", "📚 Learning Roadmap", "📊 Deep Analysis"])
+    # ── TABS ─────────────────────────────────────────────
+    t1, t2, t3, t4 = st.tabs(["🎯 Career Matches", "🔍 Skill Gap", "📚 Roadmap", "📊 Deep Analysis"])
 
-    # ── Tab 1: Career Matches ─────────────────────────────────────────────────
-    with tab1:
-        col_left, col_right = st.columns([1.2, 1])
+    def pills(items, cls):
+        return "".join([f"<span class='{cls}'>{s}</span>" for s in items])
 
-        with col_left:
-            st.markdown("<div class='section-label'>BERT Semantic Similarity</div>", unsafe_allow_html=True)
-            st.markdown("<div class='section-title'>Your top career matches</div>", unsafe_allow_html=True)
-
-            for i, rec in enumerate(bert_recs):
-                top_class  = "top" if i == 0 else ""
-                rank_label = "🏆 Best match" if i == 0 else f"#{i+1}"
-                rank_class = "gold" if i == 0 else ""
+    # ── TAB 1: CAREER MATCHES ─────────────────────────────
+    with t1:
+        cl, cr = st.columns([1.2,1])
+        with cl:
+            st.markdown("<div class='sec-eye'>BERT Semantic Similarity</div><div class='sec-head'>Your career matches</div>", unsafe_allow_html=True)
+            for i, r in enumerate(recs):
+                top_cls = "top" if i==0 else ""
+                rk_cls  = "gld" if i==0 else ""
+                rk_lbl  = "⚡ Best Match" if i==0 else f"#{i+1}"
                 st.markdown(f"""
-                <div class='career-card {top_class}'>
-                  <div class='career-rank {rank_class}'>{rank_label}</div>
-                  <div class='career-name'>{rec["career"]}</div>
-                  <div style='font-size:.82rem;color:#64748b;margin-top:.1rem'>{rec["score"]}% semantic match</div>
-                  <div class='sim-bar-bg'><div class='sim-bar' style='width:{min(rec["score"],100)}%'></div></div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        with col_right:
-            st.markdown("<div class='section-label'>TF-IDF ML Classifier</div>", unsafe_allow_html=True)
-            st.markdown("<div class='section-title'>Direct prediction</div>", unsafe_allow_html=True)
+                <div class='mc {top_cls}'>
+                  <div class='mc-rank {rk_cls}'>{rk_lbl}</div>
+                  <div class='mc-name'>{friendly(r["career"])}</div>
+                  <div class='mc-score'>{r["score"]}% semantic similarity · <span style='color:rgba(99,102,241,.7);font-family:"JetBrains Mono",monospace;font-size:.7rem'>{r["career"]}</span></div>
+                  <div class='bar-bg'><div class='bar-fg' style='width:{min(r["score"],100)}%'></div></div>
+                </div>""", unsafe_allow_html=True)
+        with cr:
+            st.markdown("<div class='sec-eye'>TF-IDF Classifier</div><div class='sec-head'>ML prediction</div>", unsafe_allow_html=True)
             st.markdown(f"""
-            <div class='career-card top' style='margin-top:.2rem'>
-              <div style='font-size:.78rem;color:#7c6ff7;font-weight:700;margin-bottom:.4rem;letter-spacing:.04em'>LOGISTIC REGRESSION ON TF-IDF</div>
-              <div style='font-size:1.5rem;font-weight:800;color:#1a1a2e'>{tfidf_pred}</div>
-              <div style='font-size:.78rem;color:#64748b;margin-top:.3rem'>Keyword-based classification</div>
-            </div>
-            """, unsafe_allow_html=True)
+            <div class='pred-box'>
+              <div class='pred-lbl'>Logistic Regression · TF-IDF</div>
+              <div class='pred-val'>{friendly(tp)}</div>
+              <div style='font-family:"JetBrains Mono",monospace;font-size:.65rem;color:rgba(99,102,241,.6);margin-top:.2rem'>{tp}</div>
+              <div style='font-size:.74rem;color:rgba(148,163,184,.42);margin-top:.3rem'>Keyword-based classification</div>
+            </div>""", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<div class='section-label'>Skills detected in resume</div>", unsafe_allow_html=True)
-            if user_skills:
-                skills_html = "".join([f"<span class='skill-have'>{s}</span>" for s in sorted(user_skills)[:24]])
-                st.markdown(f"<div style='line-height:2'>{skills_html}</div>", unsafe_allow_html=True)
-                if len(user_skills) > 24:
-                    st.caption(f"+ {len(user_skills)-24} more skills detected")
+            st.markdown("<div class='sec-eye'>Detected Skills</div>", unsafe_allow_html=True)
+            if skills:
+                st.markdown(f"<div style='line-height:2.3'>{pills(sorted(skills)[:24],'ph')}</div>", unsafe_allow_html=True)
+                if len(skills) > 24: st.caption(f"+{len(skills)-24} more detected")
             else:
-                st.caption("No specific skills matched. Try a more detailed resume.")
+                st.markdown("""<div class='no-data-box'>
+                ⚠️ No skills detected. Add more specific keywords to your resume
+                (e.g. Python, Excel, SQL, Figma, etc.)
+                </div>""", unsafe_allow_html=True)
 
-    # ── Tab 2: Skill Gap ───────────────────────────────────────────────────────
-    with tab2:
-        st.markdown("<div class='section-label'>Skill Gap Analysis</div>", unsafe_allow_html=True)
+    # ── TAB 2: SKILL GAP ──────────────────────────────────
+    with t2:
+        st.markdown("<div class='sec-eye'>Skill Gap Analysis</div><div class='sec-head'>What you have vs. what you need</div>", unsafe_allow_html=True)
 
-        career_options = [r["career"] for r in bert_recs]
-        selected_career = st.selectbox("Analyze skill gap for:", career_options, key="gap_select")
-        gap_data2, resources2 = get_skill_gap(user_skills, selected_career)
+        career_opts = [r["career"] for r in recs]
+        display_opts = [f"{friendly(c)} ({c})" for c in career_opts]
+        sel_idx = st.selectbox("Analyze gap for:", range(len(career_opts)),
+                                format_func=lambda i: display_opts[i], key="gap_sel")
+        sel_c = career_opts[sel_idx]
+        gd2, res2 = skill_gap(skills, sel_c)
 
-        if isinstance(gap_data2, dict) and gap_data2:
-            match2 = gap_data2.get("match_pct", 0)
+        if isinstance(gd2, dict) and gd2:
+            m2 = gd2.get("match_pct", 0)
+            have_total = len(gd2["have_core"]) + len(gd2["have_adv"]) + len(gd2["have_tools"])
+            miss_total = len(gd2["miss_core"]) + len(gd2["miss_adv"]) + len(gd2["miss_tools"])
 
             st.markdown(f"""
-            <div style='margin:1rem 0 1.5rem;background:white;border:1.5px solid #ede9ff;border-radius:14px;padding:1.2rem 1.4rem'>
-              <div style='display:flex;justify-content:space-between;font-size:.88rem;font-weight:600;margin-bottom:.5rem'>
-                <span>Core skill match for <strong>{selected_career}</strong></span>
-                <span style='color:#7c6ff7;font-size:1.1rem'>{match2}%</span>
+            <div class='gap-box'>
+              <div class='gap-row'>
+                <span>Core skill match — <strong>{friendly(sel_c)}</strong></span>
+                <span class='gap-pct'>{m2}%</span>
               </div>
-              <div style='height:12px;background:#f0eeff;border-radius:6px;overflow:hidden'>
-                <div style='height:12px;width:{match2}%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:6px;transition:width .6s'></div>
+              <div class='gap-track'><div class='gap-fill' style='width:{m2}%'></div></div>
+              <div style='font-size:.7rem;color:rgba(148,163,184,.38);font-family:"JetBrains Mono",monospace;margin-top:.3rem'>
+                {len(gd2["have_core"])} / {len(gd2["have_core"])+len(gd2["miss_core"])} core skills &nbsp;·&nbsp;
+                {have_total} skills matched &nbsp;·&nbsp; {miss_total} skills to acquire
               </div>
             </div>
             """, unsafe_allow_html=True)
 
-            c1, c2, c3 = st.columns(3)
+            lbl = lambda txt, clr: f"<div style='font-size:.6rem;font-weight:700;color:{clr};letter-spacing:.1em;text-transform:uppercase;margin:.55rem 0 .3rem;font-family:\"JetBrains Mono\",monospace'>{txt}</div>"
+            cc1, cc2, cc3 = st.columns(3)
 
-            with c1:
-                st.markdown("**🔵 Core Skills**")
-                if gap_data2["have_core"]:
-                    html = "".join([f"<span class='skill-have'>{s}</span>" for s in gap_data2["have_core"]])
-                    st.markdown(f"<div style='line-height:2.1'>✅ You have:<br>{html}</div>", unsafe_allow_html=True)
-                if gap_data2["missing_core"]:
-                    html = "".join([f"<span class='skill-missing'>{s}</span>" for s in gap_data2["missing_core"]])
-                    st.markdown(f"<div style='line-height:2.1;margin-top:.7rem'>❌ Missing:<br>{html}</div>", unsafe_allow_html=True)
+            with cc1:
+                st.markdown("<div class='skill-col-head'>🔵 Core Skills</div>", unsafe_allow_html=True)
+                if gd2["have_core"]:
+                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_core'],'ph')}</div>", unsafe_allow_html=True)
+                if gd2["miss_core"]:
+                    st.markdown(lbl("❌ MISSING", "rgba(248,113,113,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_core'],'pm')}</div>", unsafe_allow_html=True)
+                if not gd2["have_core"] and not gd2["miss_core"]:
+                    st.caption("No core skill data")
 
-            with c2:
-                st.markdown("**🟣 Advanced Skills**")
-                if gap_data2["have_advanced"]:
-                    html = "".join([f"<span class='skill-have'>{s}</span>" for s in gap_data2["have_advanced"]])
-                    st.markdown(f"<div style='line-height:2.1'>✅ You have:<br>{html}</div>", unsafe_allow_html=True)
-                if gap_data2["missing_advanced"]:
-                    html = "".join([f"<span class='skill-learn'>{s}</span>" for s in gap_data2["missing_advanced"]])
-                    st.markdown(f"<div style='line-height:2.1;margin-top:.7rem'>📖 To learn:<br>{html}</div>", unsafe_allow_html=True)
+            with cc2:
+                st.markdown("<div class='skill-col-head'>🟣 Advanced Skills</div>", unsafe_allow_html=True)
+                if gd2["have_adv"]:
+                    st.markdown(lbl("✅ YOU HAVE", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_adv'],'ph')}</div>", unsafe_allow_html=True)
+                if gd2["miss_adv"]:
+                    st.markdown(lbl("📖 TO LEARN", "rgba(251,191,36,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_adv'],'pl')}</div>", unsafe_allow_html=True)
 
-            with c3:
-                st.markdown("**🟠 Tools & Platforms**")
-                if gap_data2["have_tools"]:
-                    html = "".join([f"<span class='skill-have'>{s}</span>" for s in gap_data2["have_tools"]])
-                    st.markdown(f"<div style='line-height:2.1'>✅ You know:<br>{html}</div>", unsafe_allow_html=True)
-                if gap_data2["missing_tools"]:
-                    html = "".join([f"<span class='skill-learn'>{s}</span>" for s in gap_data2["missing_tools"]])
-                    st.markdown(f"<div style='line-height:2.1;margin-top:.7rem'>🛠️ To add:<br>{html}</div>", unsafe_allow_html=True)
+            with cc3:
+                st.markdown("<div class='skill-col-head'>🟠 Tools & Platforms</div>", unsafe_allow_html=True)
+                if gd2["have_tools"]:
+                    st.markdown(lbl("✅ YOU KNOW", "rgba(52,211,153,.7)") + f"<div style='line-height:2.2'>{pills(gd2['have_tools'],'ph')}</div>", unsafe_allow_html=True)
+                if gd2["miss_tools"]:
+                    st.markdown(lbl("🛠️ TO ADD", "rgba(251,191,36,.7)") + f"<div style='line-height:2.2'>{pills(gd2['miss_tools'],'pl')}</div>", unsafe_allow_html=True)
         else:
-            st.info("No skill data available for this career in the knowledge base.")
+            st.markdown(f"""<div class='no-data-box'>
+            ⚠️ The career <strong>{friendly(sel_c)}</strong> ({sel_c}) matched from your resume
+            but isn't in the skill database yet. This can happen when the model matches you to
+            a less common category. Try selecting a different career from the dropdown above.
+            </div>""", unsafe_allow_html=True)
 
-    # ── Tab 3: Learning Roadmap ────────────────────────────────────────────────
-    with tab3:
-        st.markdown("<div class='section-label'>Personalized Roadmap</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='section-title'>How to become a {top_career}</div>", unsafe_allow_html=True)
+    # ── TAB 3: ROADMAP ────────────────────────────────────
+    with t3:
+        st.markdown(f"<div class='sec-eye'>Personalized Learning Path</div><div class='sec-head'>Road to {friendly(top_c)}</div>", unsafe_allow_html=True)
+        gf, rf = skill_gap(skills, top_c)
 
-        gap_final, res_final = get_skill_gap(user_skills, top_career)
+        if isinstance(gf, dict) and gf:
+            prio = gf.get("miss_core", [])[:5]
+            adv  = gf.get("miss_adv",  [])[:5]
 
-        if isinstance(gap_final, dict) and gap_final:
-            priorities = gap_final.get("missing_core", [])[:5]
-            adv_gaps   = gap_final.get("missing_advanced", [])[:5]
+            def step(n, title, sub):
+                return f"<div class='step-row'><div class='step-n'>{n}</div><div><div class='step-t'>{title}</div><div class='step-s'>{sub}</div></div></div>"
 
             # Phase 1
-            st.markdown(f"""
-            <div style='display:flex;align-items:flex-start;margin-bottom:.8rem'>
-              <span class='step-badge'>1</span>
-              <div>
-                <div style='font-weight:700;font-size:1rem;margin-bottom:.15rem'>Fill core skill gaps</div>
-                <div style='font-size:.84rem;color:#64748b'>Must-haves for {top_career}</div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-            if priorities:
-                html = "".join([f"<span class='skill-missing'>{s}</span>" for s in priorities])
-                st.markdown(f"<div style='line-height:2.1;margin-left:2.8rem'>{html}</div>", unsafe_allow_html=True)
+            st.markdown(step("1", "Fill core skill gaps", f"Must-haves for {friendly(top_c)}"), unsafe_allow_html=True)
+            if prio:
+                st.markdown(f"<div style='margin-left:2.8rem;line-height:2.3;margin-bottom:1rem'>{pills(prio,'pm')}</div>", unsafe_allow_html=True)
             else:
                 st.success("🎉 You already have all core skills for this role!")
-
             st.markdown("<br>", unsafe_allow_html=True)
 
             # Phase 2
-            st.markdown(f"""
-            <div style='display:flex;align-items:flex-start;margin-bottom:.8rem'>
-              <span class='step-badge'>2</span>
-              <div>
-                <div style='font-weight:700;font-size:1rem;margin-bottom:.15rem'>Level up with advanced skills</div>
-                <div style='font-size:.84rem;color:#64748b'>Stand out from other candidates</div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-            if adv_gaps:
-                html = "".join([f"<span class='skill-learn'>{s}</span>" for s in adv_gaps])
-                st.markdown(f"<div style='line-height:2.1;margin-left:2.8rem'>{html}</div>", unsafe_allow_html=True)
+            st.markdown(step("2", "Level up with advanced skills", "Differentiate yourself from other candidates"), unsafe_allow_html=True)
+            if adv:
+                st.markdown(f"<div style='margin-left:2.8rem;line-height:2.3;margin-bottom:1rem'>{pills(adv,'pl')}</div>", unsafe_allow_html=True)
             else:
-                st.success("🎉 You're advanced in this field already!")
-
+                st.success("🎉 You're already advanced in this field!")
             st.markdown("<br>", unsafe_allow_html=True)
 
             # Phase 3
-            st.markdown(f"""
-            <div style='display:flex;align-items:flex-start;margin-bottom:.8rem'>
-              <span class='step-badge'>3</span>
-              <div>
-                <div style='font-weight:700;font-size:1rem;margin-bottom:.15rem'>Curated learning resources</div>
-                <div style='font-size:.84rem;color:#64748b'>Handpicked for {top_career}</div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            for r in res_final:
-                st.markdown(f"""
-                <div class='resource-card'>
-                  <div class='resource-title'>{r["title"]}</div>
-                  <div class='resource-meta'>{r["type"]} &nbsp;·&nbsp; <a href='{r["link"]}' target='_blank' style='color:#7c6ff7;text-decoration:none'>Open resource ↗</a></div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Phase 4 — Next steps
+            st.markdown(step("3", f"Curated learning resources", f"Handpicked for {friendly(top_c)}"), unsafe_allow_html=True)
+            if rf:
+                st.markdown("<div style='margin-left:2.8rem;margin-bottom:1.2rem'>", unsafe_allow_html=True)
+                for r in rf:
+                    st.markdown(f"""
+                    <div class='res-card'>
+                      <div class='res-t'>{r["title"]}</div>
+                      <div class='res-m'>{r["type"]} &nbsp;·&nbsp; <a href='{r["link"]}' target='_blank' style='color:#818cf8;text-decoration:none'>Open resource ↗</a></div>
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.caption("No specific resources listed for this category yet.")
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <div style='display:flex;align-items:flex-start;margin-bottom:.8rem'>
-              <span class='step-badge'>4</span>
-              <div>
-                <div style='font-weight:700;font-size:1rem;margin-bottom:.15rem'>Practical next steps</div>
-                <div style='font-size:.84rem;color:#64748b'>Apply your skills and get noticed</div>
-              </div>
-            </div>
-            <div style='margin-left:2.8rem;font-size:.88rem;color:#475569;line-height:1.9'>
-              🔨 Build 2–3 portfolio projects showcasing your skills<br>
-              🐙 Contribute to open source GitHub repositories<br>
-              📝 Update your LinkedIn with new skills & projects<br>
-              🤝 Join communities: Discord, Reddit, Slack groups<br>
-              💼 Apply with a tailored resume for each role
-            </div>
-            """, unsafe_allow_html=True)
+
+            # Phase 4
+            st.markdown(step("4", "Get hired — action plan", "Apply your new skills and get noticed"), unsafe_allow_html=True)
+            for icon, txt in [
+                ("🔨", "Build 2-3 portfolio projects and push to GitHub"),
+                ("🐙", "Contribute to open source repositories in your domain"),
+                ("📝", "Update LinkedIn with your new skills and project links"),
+                ("🤝", "Join online communities — Discord, Reddit, Slack groups"),
+                ("💼", "Apply with a tailored resume for each job (use JD Matcher!)"),
+                ("🏅", "Get 1-2 certifications to add credibility"),
+            ]:
+                st.markdown(f"<div class='ns-item'><span>{icon}</span><span>{txt}</span></div>", unsafe_allow_html=True)
         else:
-            st.info("Knowledge base entry not found for this career. More careers coming soon.")
+            st.markdown(f"""<div class='no-data-box'>
+            ⚠️ <strong>{friendly(top_c)}</strong> matched from your resume but isn't in the
+            knowledge base yet. Try switching to Demo Profile mode and use a more skill-rich resume
+            to get a tech/business career match with full roadmap support.
+            </div>""", unsafe_allow_html=True)
 
-    # ── Tab 4: Deep Analysis ───────────────────────────────────────────────────
-    with tab4:
-        st.markdown("<div class='section-label'>Deep Analysis</div>", unsafe_allow_html=True)
-        st.markdown("<div class='section-title'>Full recommendation report</div>", unsafe_allow_html=True)
+    # ── TAB 4: DEEP ANALYSIS ─────────────────────────────
+    with t4:
+        st.markdown("<div class='sec-eye'>Deep Analysis</div><div class='sec-head'>Full Report</div>", unsafe_allow_html=True)
 
-        st.markdown("**BERT similarity scores (all matches)**")
-        bert_df = pd.DataFrame(bert_recs).rename(columns={"career": "Career Path", "score": "Semantic Match (%)"})
+        # BERT scores table
+        st.markdown("<div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>BERT Similarity Scores</div>", unsafe_allow_html=True)
+        bert_df = pd.DataFrame([{
+            "Category (Raw)": r["career"],
+            "Career (Friendly)": friendly(r["career"]),
+            "Semantic Match (%)": r["score"]
+        } for r in recs])
         st.dataframe(bert_df, use_container_width=True, hide_index=True)
 
-        if user_skills:
-            st.markdown("<br>**Detected skills inventory**", unsafe_allow_html=True)
-            skill_df = pd.DataFrame({"Skill": sorted(user_skills)})
-            n_cols = 3
-            chunk = len(skill_df) // n_cols + 1
-            skill_cols = st.columns(n_cols)
-            for idx, col in enumerate(skill_cols):
+        # Detected skills
+        if skills:
+            st.markdown("<br><div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>DETECTED SKILLS</div>", unsafe_allow_html=True)
+            sk = sorted(skills); n = 3; chunk = len(sk)//n+1
+            scols = st.columns(n)
+            for i, col in enumerate(scols):
                 with col:
-                    sub = skill_df.iloc[idx*chunk:(idx+1)*chunk]
-                    if not sub.empty:
-                        st.dataframe(sub, use_container_width=True, hide_index=True)
+                    sub = sk[i*chunk:(i+1)*chunk]
+                    if sub: st.dataframe(pd.DataFrame({"Skill": sub}), use_container_width=True, hide_index=True)
 
-        st.markdown("<br>**Skill match % across top careers**", unsafe_allow_html=True)
-        gap_table = []
-        for rec in bert_recs[:5]:
-            gd, _ = get_skill_gap(user_skills, rec["career"])
-            if isinstance(gd, dict):
-                gap_table.append({
-                    "Career": rec["career"],
-                    "Semantic Match (%)": rec["score"],
-                    "Core Skill Match (%)": gd.get("match_pct", 0),
-                    "Skills You Have": len(gd.get("have_core", [])) + len(gd.get("have_advanced", [])),
-                    "Skills to Learn": len(gd.get("missing_core", [])) + len(gd.get("missing_advanced", [])),
+        # Multi-career comparison
+        st.markdown("<br><div style='font-size:.75rem;font-weight:600;color:rgba(165,180,252,.7);margin-bottom:.5rem;letter-spacing:.06em;text-transform:uppercase'>MULTI-CAREER SKILL COMPARISON</div>", unsafe_allow_html=True)
+        table = []
+        for r in recs[:5]:
+            g, _ = skill_gap(skills, r["career"])
+            in_kb = r["career"] in CAREER_SKILLS
+            if isinstance(g, dict) and g:
+                table.append({
+                    "Career": friendly(r["career"]),
+                    "Semantic (%)": r["score"],
+                    "Core Match (%)": g.get("match_pct", 0),
+                    "Skills ✅": len(g.get("have_core",[])) + len(g.get("have_adv",[])),
+                    "Skills 📚": len(g.get("miss_core",[])) + len(g.get("miss_adv",[])),
+                    "In KB": "✅" if in_kb else "⚠️ Limited"
                 })
-        if gap_table:
-            st.dataframe(pd.DataFrame(gap_table), use_container_width=True, hide_index=True)
+            else:
+                table.append({
+                    "Career": friendly(r["career"]),
+                    "Semantic (%)": r["score"],
+                    "Core Match (%)": 0,
+                    "Skills ✅": 0,
+                    "Skills 📚": 0,
+                    "In KB": "⚠️ Limited"
+                })
+        if table:
+            st.dataframe(pd.DataFrame(table), use_container_width=True, hide_index=True)
 
-        # Download button
+        # Download report
+        lines = [
+            "CAREERLENS AI — ANALYSIS REPORT (v3.0)", "="*50,
+            f"Top Match: {friendly(top_c)} ({top_c})", "="*50,
+            f"TF-IDF Prediction: {friendly(tp)} ({tp})",
+            f"Skills Detected: {len(skills)}",
+            f"Core Skill Match: {match_pct}%", "",
+            "BERT CAREER MATCHES:"
+        ] + [f"  {friendly(r['career'])} ({r['career']}): {r['score']}%" for r in recs] \
+          + ["", "DETECTED SKILLS:"] + [f"  {s}" for s in sorted(skills)] \
+          + ["", "CORE SKILL GAPS:"] + [f"  ❌ {s}" for s in gd.get("miss_core", [])]
+
         st.markdown("<br>", unsafe_allow_html=True)
-        report_lines = [
-            "CAREER PATH ADVISOR — ANALYSIS REPORT",
-            "=" * 50,
-            f"Top career match: {top_career}",
-            f"TF-IDF prediction: {tfidf_pred}",
-            f"Skills detected: {len(user_skills)}",
-            f"Core skill match: {match_pct}%",
-            "",
-            "TOP CAREER MATCHES (BERT):",
-        ]
-        for r in bert_recs:
-            report_lines.append(f"  {r['career']}: {r['score']}%")
-        report_lines += ["", "DETECTED SKILLS:"]
-        report_lines += [f"  {s}" for s in sorted(user_skills)]
-        report_lines += ["", "CORE SKILL GAPS:"]
-        for s in gap_data.get("missing_core", []):
-            report_lines.append(f"  ❌ {s}")
-
-        st.download_button(
-            label="⬇️ Download Report (.txt)",
-            data="\n".join(report_lines),
-            file_name="career_advisor_report.txt",
-            mime="text/plain"
-        )
+        st.download_button("⬇️ Download Full Report", "\n".join(lines), "careerlens_report.txt", "text/plain")
 
 elif analyze and not resume_text.strip():
-    st.warning("⚠️ Please provide your resume text first.")
+    st.warning("⚠️ Please provide your resume first.")
 
 else:
-    # Landing state
     st.markdown("""
-    <div style='text-align:center;padding:4rem 1rem 3rem;'>
-      <div style='font-size:4rem;margin-bottom:1.2rem'>🧭</div>
-      <div style='font-size:1.25rem;font-weight:700;color:#1a1a2e;font-family:"DM Serif Display",serif'>Ready when you are</div>
-      <div style='font-size:.92rem;margin-top:.5rem;color:#94a3b8;max-width:400px;margin-left:auto;margin-right:auto'>
-        Upload your resume or paste your text,<br>then click <strong style='color:#7c6ff7'>Analyze My Resume</strong>
+    <div style='text-align:center;padding:5rem 1rem 3rem'>
+      <div style='font-size:4rem;margin-bottom:1.5rem'>🔭</div>
+      <div style='font-family:"Syne",sans-serif;font-size:1.6rem;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;margin-bottom:.6rem'>Ready to analyze</div>
+      <div style='font-size:.88rem;color:rgba(148,163,184,.48);max-width:360px;margin:0 auto;line-height:1.7'>
+        Upload your resume or pick a demo,<br>
+        then click <span style='color:#818cf8;font-weight:600'>Analyze My Resume</span>
       </div>
-      <div style='margin-top:2rem;display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap'>
-        <div style='background:#f8f7ff;border:1.5px solid #ede9ff;border-radius:12px;padding:.9rem 1.4rem;font-size:.84rem;color:#475569'>
-          🤖 BERT Semantic Similarity
-        </div>
-        <div style='background:#f8f7ff;border:1.5px solid #ede9ff;border-radius:12px;padding:.9rem 1.4rem;font-size:.84rem;color:#475569'>
-          📊 TF-IDF ML Classification
-        </div>
-        <div style='background:#f8f7ff;border:1.5px solid #ede9ff;border-radius:12px;padding:.9rem 1.4rem;font-size:.84rem;color:#475569'>
-          🎯 Skill Gap Analysis
-        </div>
-        <div style='background:#f8f7ff;border:1.5px solid #ede9ff;border-radius:12px;padding:.9rem 1.4rem;font-size:.84rem;color:#475569'>
-          🗺️ Learning Roadmap
-        </div>
-      </div>
+    </div>
+    <div class='land-grid'>
+      <div class='land-f'><div class='lf-icon'>🤖</div><div class='lf-t'>BERT Semantic Matching</div>
+        <div class='lf-d'>Deep NLP embeddings compare your resume to all 24 career profiles using cosine similarity</div></div>
+      <div class='land-f'><div class='lf-icon'>📊</div><div class='lf-t'>TF-IDF Classification</div>
+        <div class='lf-d'>Logistic regression on keyword TF-IDF vectors gives an instant direct prediction</div></div>
+      <div class='land-f'><div class='lf-icon'>🎯</div><div class='lf-t'>Skill Gap Analysis</div>
+        <div class='lf-d'>Exact skills you have vs. what each of the 24 careers requires — core, advanced, tools</div></div>
+      <div class='land-f'><div class='lf-icon'>🗺️</div><div class='lf-t'>Personalized Roadmap</div>
+        <div class='lf-d'>4-phase learning plan with curated books, courses, certifications and action steps</div></div>
     </div>
     """, unsafe_allow_html=True)

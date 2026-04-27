@@ -15,22 +15,6 @@ An AI-powered career recommendation system that analyzes resumes using Natural L
 
 ---
 
-## 👥 Team & Project Division
-
-This project is divided between two key roles to ensure efficient development and collaboration.
-
-### Member 1: Machine Learning & Data Scientist (Branch: `ml-data-science`)
-**Primary Focus:** Data processing, model training, and NLP logic.
-- **Files:** `career_path_project_final_nlp.ipynb`, `career_data.csv`
-- **Responsibilities:** Clean the data, train the TF-IDF and BERT models, and improve the skill extraction algorithms.
-
-### Member 2: Web App Developer & UI/UX (Branch: `web-app-ui`)
-**Primary Focus:** Streamlit application, user interface, and model integration.
-- **Files:** `career_advisor_app.py`, `requirements.txt`
-- **Responsibilities:** Build out the Streamlit interface, integrate the ML models, manage state, and style the application.
-
----
-
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
@@ -46,20 +30,18 @@ pip install -r requirements.txt
 ```
 *(Note: You may also need to install `pdfplumber` if you wish to process PDF resumes.)*
 
-### 3. Running the Machine Learning Notebook (Member 1)
-Open the Jupyter Notebook to train or evaluate the models:
+### 3. Exploring the Machine Learning Model
+The ML models and text preprocessing code can be found and experimented with inside the Jupyter Notebook:
 ```bash
 jupyter notebook career_path_project_final_nlp.ipynb
 ```
 
-### 4. Running the Web App (Member 2)
-To start the Streamlit application locally:
+### 4. Running the Web App
+To start the Streamlit application locally and interact with the UI:
 ```bash
 streamlit run career_advisor_app.py
 ```
+Open the provided `localhost` URL in your browser to view the application.
 
-## 🤝 How to Collaborate
-1. Make sure you are on your designated branch (`ml-data-science` or `web-app-ui`).
-2. Commit your changes: `git commit -m "Your descriptive message"`
-3. Push to your branch: `git push origin <your-branch-name>`
-4. Open a Pull Request on GitHub to merge your features into the `main` branch.
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page or create a pull request if you have improvements for the recommendation system or the user interface.
